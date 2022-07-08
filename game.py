@@ -197,6 +197,7 @@ while inplay:
             os.system('cls')
             move = 0
             # printmap(base)
+            print("  Stage "+ str(stage+1))
             printmap(currpuzzle)
             # print(coordx, coordy)
             print("1:Left 2:Right 3:Up 4:Down 5:Reset 6:Return to Main Menu")
