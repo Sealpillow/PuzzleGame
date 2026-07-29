@@ -1,4 +1,5 @@
 import { transformNode } from './Symmetry.js';
+import { POLYOMINO_SHAPES } from './Polyominoes.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -8,6 +9,16 @@ function svgEl(tag, attrs = {}) {
     el.setAttribute(key, value);
   }
   return el;
+}
+
+function starPoints(cx, cy, outerR, innerR) {
+  const points = [];
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    const angle = (Math.PI / 5) * i - Math.PI / 2;
+    points.push(`${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`);
+  }
+  return points.join(' ');
 }
 
 export class Renderer {
@@ -85,6 +96,71 @@ export class Renderer {
           width: size,
           height: size,
           class: `region-chip region-${color}`,
+        })
+      );
+    }
+    for (const [col, row, color] of this.puzzle.stars || []) {
+      const center = this.grid.cellCenter(col, row);
+      const outerR = this.grid.cellSize * 0.22;
+      this.symbolsGroup.appendChild(
+        svgEl('polygon', {
+          points: starPoints(center.x, center.y, outerR, outerR * 0.42),
+          class: `star star-${color}`,
+        })
+      );
+    }
+    for (const [col, row] of this.puzzle.eliminators || []) {
+      this.drawEliminator(col, row);
+    }
+    for (const [col, row, shape] of this.puzzle.polyominoes || []) {
+      this.drawPolyominoIcon(col, row, shape);
+    }
+  }
+
+  drawEliminator(col, row) {
+    const center = this.grid.cellCenter(col, row);
+    const r = this.grid.cellSize * 0.22;
+    const arm = r * 0.55;
+    this.symbolsGroup.appendChild(svgEl('circle', { cx: center.x, cy: center.y, r, class: 'eliminator-ring' }));
+    this.symbolsGroup.appendChild(
+      svgEl('line', {
+        x1: center.x - arm,
+        y1: center.y - arm,
+        x2: center.x + arm,
+        y2: center.y + arm,
+        class: 'eliminator-mark',
+      })
+    );
+    this.symbolsGroup.appendChild(
+      svgEl('line', {
+        x1: center.x + arm,
+        y1: center.y - arm,
+        x2: center.x - arm,
+        y2: center.y + arm,
+        class: 'eliminator-mark',
+      })
+    );
+  }
+
+  drawPolyominoIcon(col, row, shape) {
+    const cells = POLYOMINO_SHAPES[shape];
+    if (!cells) return;
+    const center = this.grid.cellCenter(col, row);
+    const maxCol = Math.max(...cells.map(([c]) => c)) + 1;
+    const maxRow = Math.max(...cells.map(([, r]) => r)) + 1;
+    const span = Math.max(maxCol, maxRow);
+    const cellPx = (this.grid.cellSize * 0.5) / span;
+    const gap = cellPx * 0.12;
+    const totalW = maxCol * cellPx;
+    const totalH = maxRow * cellPx;
+    for (const [c, r] of cells) {
+      this.symbolsGroup.appendChild(
+        svgEl('rect', {
+          x: center.x - totalW / 2 + c * cellPx + gap / 2,
+          y: center.y - totalH / 2 + r * cellPx + gap / 2,
+          width: cellPx - gap,
+          height: cellPx - gap,
+          class: 'polyomino-cell',
         })
       );
     }

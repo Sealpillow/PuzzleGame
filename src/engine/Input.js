@@ -8,7 +8,7 @@ export class InputController {
     this.onRelease = onRelease || (() => {});
     this.puzzle = null;
     this.path = [];
-    this.dragging = false;
+    this.tracing = false;
 
     this.handlePointerDown = this.handlePointerDown.bind(this);
     this.handlePointerMove = this.handlePointerMove.bind(this);
@@ -23,12 +23,12 @@ export class InputController {
   setPuzzle(puzzle) {
     this.puzzle = puzzle;
     this.path = [];
-    this.dragging = false;
+    this.tracing = false;
   }
 
   reset() {
     this.path = [];
-    this.dragging = false;
+    this.tracing = false;
   }
 
   destroy() {
@@ -68,19 +68,27 @@ export class InputController {
 
   handlePointerDown(evt) {
     if (!this.puzzle) return;
+
+    if (this.tracing) {
+      // A click while a path is already armed submits it, whether the player got here by
+      // holding-and-dragging or by clicking once and moving the mouse freely.
+      this.finalize();
+      return;
+    }
+
     const { node, dist } = this.nearestNode(this.svgPoint(evt));
     const grabRadius = this.grid.cellSize * 0.6;
     if (dist > grabRadius) return;
     const [sc, sr] = this.puzzle.start;
     if (node[0] !== sc || node[1] !== sr) return;
 
-    this.dragging = true;
+    this.tracing = true;
     this.path = [node];
     this.onChange(this.path);
   }
 
   handlePointerMove(evt) {
-    if (!this.dragging) return;
+    if (!this.tracing) return;
     const { node, dist } = this.nearestNode(this.svgPoint(evt));
     const grabRadius = this.grid.cellSize * 0.9;
     if (dist > grabRadius) return;
@@ -106,8 +114,16 @@ export class InputController {
   }
 
   handlePointerUp() {
-    if (!this.dragging) return;
-    this.dragging = false;
+    // Only auto-submit on release if the pointer actually moved past the start node while
+    // held (a classic click-and-drag). A plain click with no movement leaves the path armed
+    // so the player can trace it by moving the mouse without holding the button down.
+    if (this.tracing && this.path.length > 1) {
+      this.finalize();
+    }
+  }
+
+  finalize() {
+    this.tracing = false;
     this.onRelease(this.path);
   }
 }

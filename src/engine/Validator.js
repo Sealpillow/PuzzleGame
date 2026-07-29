@@ -1,16 +1,11 @@
 import { satisfiesSymmetry } from './Symmetry.js';
+import { combinedTraveledNodes, combinedTraveledEdges, computeRegions } from './Regions.js';
+import { satisfiesEliminators } from './Eliminators.js';
+import { satisfiesPolyominoes } from './Polyominoes.js';
 
 export function isEdgeBlocked(grid, puzzle, a, b) {
   const key = grid.edgeKey(a, b);
   return (puzzle.blockedEdges || []).some((edge) => grid.edgeKey(edge[0], edge[1]) === key);
-}
-
-export function pathEdgeSet(grid, path) {
-  const set = new Set();
-  for (let i = 1; i < path.length; i++) {
-    set.add(grid.edgeKey(path[i - 1], path[i]));
-  }
-  return set;
 }
 
 export function isValidPath(grid, puzzle, path) {
@@ -39,21 +34,21 @@ export function reachesExit(puzzle, path) {
 export function passesAllDots(grid, puzzle, path) {
   const dots = puzzle.dots || [];
   if (dots.length === 0) return true;
-  const visited = new Set(path.map((n) => grid.nodeKey(n)));
+  const visited = combinedTraveledNodes(grid, puzzle, path);
   return dots.every((dot) => visited.has(grid.nodeKey(dot)));
 }
 
 export function includesRequiredEdges(grid, puzzle, path) {
   const required = puzzle.requiredEdges || [];
   if (required.length === 0) return true;
-  const traveled = pathEdgeSet(grid, path);
+  const traveled = combinedTraveledEdges(grid, puzzle, path);
   return required.every((edge) => traveled.has(grid.edgeKey(edge[0], edge[1])));
 }
 
 export function satisfiesTriangles(grid, puzzle, path) {
   const triangles = puzzle.triangles || [];
   if (triangles.length === 0) return true;
-  const traveled = pathEdgeSet(grid, path);
+  const traveled = combinedTraveledEdges(grid, puzzle, path);
   return triangles.every(([col, row, count]) => {
     const touching = grid.cellEdges(col, row).filter(([a, b]) => traveled.has(grid.edgeKey(a, b)));
     return touching.length === count;
@@ -63,27 +58,9 @@ export function satisfiesTriangles(grid, puzzle, path) {
 export function satisfiesRegions(grid, puzzle, path) {
   const cellColors = puzzle.cellColors || [];
   if (cellColors.length === 0) return true;
-  const traveled = pathEdgeSet(grid, path);
   const colorByCell = new Map(cellColors.map(([col, row, color]) => [`${col},${row}`, color]));
 
-  const visited = new Set();
-  for (const [col, row] of grid.allCells()) {
-    const startKey = `${col},${row}`;
-    if (visited.has(startKey)) continue;
-    visited.add(startKey);
-    const region = [[col, row]];
-    const stack = [[col, row]];
-    while (stack.length) {
-      const [c, r] = stack.pop();
-      for (const { cell, edge } of grid.cellNeighbors(c, r)) {
-        const key = `${cell[0]},${cell[1]}`;
-        if (visited.has(key)) continue;
-        if (traveled.has(grid.edgeKey(edge[0], edge[1]))) continue;
-        visited.add(key);
-        region.push(cell);
-        stack.push(cell);
-      }
-    }
+  for (const region of computeRegions(grid, puzzle, path)) {
     const colorsInRegion = new Set(
       region.map(([c, r]) => colorByCell.get(`${c},${r}`)).filter((color) => color !== undefined)
     );
@@ -92,14 +69,56 @@ export function satisfiesRegions(grid, puzzle, path) {
   return true;
 }
 
+// A star pairs with exactly one other cell of the same color within its region — either
+// another star or a plain colored square. A region holding a star may contain no other color.
+export function satisfiesStars(grid, puzzle, path) {
+  const stars = puzzle.stars || [];
+  if (stars.length === 0) return true;
+  const starByCell = new Map(stars.map(([col, row, color]) => [`${col},${row}`, color]));
+  const colorByCell = new Map((puzzle.cellColors || []).map(([col, row, color]) => [`${col},${row}`, color]));
+
+  for (const region of computeRegions(grid, puzzle, path)) {
+    const starColors = new Set(
+      region.map(([c, r]) => starByCell.get(`${c},${r}`)).filter((color) => color !== undefined)
+    );
+    if (starColors.size === 0) continue;
+    if (starColors.size > 1) return false;
+    const [starColor] = starColors;
+
+    let matching = 0;
+    for (const [c, r] of region) {
+      const key = `${c},${r}`;
+      const cellColor = starByCell.has(key) ? starByCell.get(key) : colorByCell.get(key);
+      if (cellColor === undefined) continue;
+      if (cellColor !== starColor) return false;
+      matching++;
+    }
+    if (matching !== 2) return false;
+  }
+  return true;
+}
+
+// Eliminators exempt a triangle/color/star from its normal rule, which satisfiesTriangles/
+// satisfiesRegions/satisfiesStars can't account for on their own (triangles in particular have
+// no notion of "region" at all). When a puzzle has no eliminators this is identical to running
+// the three independent checks, so every existing non-eliminator level is completely unaffected.
+function satisfiesRegionMechanics(grid, puzzle, path) {
+  if ((puzzle.eliminators || []).length > 0) return satisfiesEliminators(grid, puzzle, path);
+  return (
+    satisfiesTriangles(grid, puzzle, path) &&
+    satisfiesRegions(grid, puzzle, path) &&
+    satisfiesStars(grid, puzzle, path)
+  );
+}
+
 export function validateSolution(grid, puzzle, path) {
   return (
     isValidPath(grid, puzzle, path) &&
     reachesExit(puzzle, path) &&
     passesAllDots(grid, puzzle, path) &&
     includesRequiredEdges(grid, puzzle, path) &&
-    satisfiesTriangles(grid, puzzle, path) &&
-    satisfiesRegions(grid, puzzle, path) &&
-    satisfiesSymmetry(grid, puzzle, path)
+    satisfiesRegionMechanics(grid, puzzle, path) &&
+    satisfiesSymmetry(grid, puzzle, path) &&
+    satisfiesPolyominoes(grid, puzzle, path)
   );
 }

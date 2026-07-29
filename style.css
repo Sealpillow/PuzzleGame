@@ -10,6 +10,9 @@
   --triangle: #e8b64f;
   --region-black: #12151a;
   --region-white: #eef1f4;
+  --region-blue: #5a7fd6;
+  --eliminator: #d9724c;
+  --polyomino: #e8b64f;
   --mirror: #b98ce8;
   --mirror-success: #a389d9;
   --mirror-fail: #c97b7b;
@@ -116,6 +119,45 @@ body {
   fill: var(--region-white);
 }
 
+.region-chip.region-blue {
+  fill: var(--region-blue);
+}
+
+.star {
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
+.star.star-black {
+  fill: var(--region-black);
+}
+
+.star.star-white {
+  fill: var(--region-white);
+}
+
+.star.star-blue {
+  fill: var(--region-blue);
+}
+
+.eliminator-ring {
+  fill: none;
+  stroke: var(--eliminator);
+  stroke-width: 3;
+}
+
+.eliminator-mark {
+  stroke: var(--eliminator);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.polyomino-cell {
+  fill: var(--polyomino);
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
 .node {
   fill: var(--node);
 }
@@ -163,10 +205,10 @@ body {
 }
 
 .mirror-exit-tick {
-  stroke: var(--mirror);
+  stroke: var(--node);
   stroke-width: 4;
   stroke-linecap: round;
-  opacity: 0.8;
+  opacity: 0.5;
 }
 
 .mirror-line {
@@ -222,7 +264,7 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  justify-content: center;
+  justify-content: left;
   max-width: 480px;
 }
 
