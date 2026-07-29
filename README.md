@@ -33,7 +33,7 @@ Drag from the glowing start node to an exit tick on the border to solve each puz
 
 ### Testing
 
-Append `?level=N` to the URL (e.g. `http://localhost:8000/?level=37`) to jump straight to level N — it unlocks free navigation between all 60 levels for that session (labeled "(debug)" in the UI) without touching your real save progress.
+Append `?level=N` to the URL (e.g. `http://localhost:8000/?level=37`) to jump straight to level N — it unlocks free navigation between all 120 levels for that session (labeled "(debug)" in the UI) without touching your real save progress.
 
 ## Tech stack & constraints
 
@@ -57,7 +57,7 @@ src/
     Eliminators.js   — the Eliminators mechanic (backtracking pairing search)
     Polyominoes.js   — the Polyominoes/Tetris mechanic (exact-cover tiling search)
   puzzles/
-    levels.json      — all 60 levels, one flat ordered array
+    levels.json      — all 120 levels, one flat ordered array
   save/
     SaveManager.js   — localStorage read/write
 index.html
@@ -85,26 +85,26 @@ Most puzzles have a single exit, but a level can define more than one — either
 
 ## Level progression
 
-Levels are one flat, gated sequence — solving level N unlocks level N+1 (`main.js`'s `isLevelUnlocked`, based purely on which puzzle IDs are in `save.completedPuzzles`, not a separate pointer). Completed levels stay freely replayable from the level-select strip. Mechanics are introduced a few levels at a time and then rewoven into combinations, never siloed into a single-mechanic block:
+Levels are one flat, gated sequence — solving level N unlocks level N+1 (`main.js`'s `isLevelUnlocked`, based purely on which puzzle IDs are in `save.completedPuzzles`, not a separate pointer). Completed levels stay freely replayable from the level-select strip. All 9 mechanics finish teaching well before the heavy combination phases begin — no mechanic is introduced after a "finale":
 
 | Levels | What's introduced |
 |---|---|
 | 1-4 | Basic pathing only |
-| 5-9 | Dots |
-| 10-14 | Blocked Edges, then combined with Dots |
-| 15-19 | Required Edges, then combined with Blocked Edges and Dots |
-| 20-24 | Symmetry (standalone) |
-| 25-29 | Triangles, then combined with Dots and Blocked Edges |
-| 30-34 | Colored Regions, then combined with Dots, Required Edges, and Blocked Edges |
-| 35-39 | Fresh three-mechanic combinations not seen in the intro blocks |
-| 40-49 | Four-mechanic combinations (each mechanic omitted exactly once across the range) |
-| 50 | Five-mechanic finale |
-| 51-53 | Stars |
-| 54 | Colored Regions revisited with a third color |
-| 55 | First level with two valid exits at once |
-| 56-57 | Eliminators |
-| 58-59 | Polyominoes |
-| 60 | Capstone combining Eliminators and Polyominoes together |
+| 5-10 | Dots |
+| 11-16 | Blocked Edges, then combined with Dots |
+| 17-22 | Required Edges, then combined with Blocked Edges and Dots |
+| 23-28 | Symmetry (standalone) |
+| 29-34 | Triangles, then combined with Dots and Blocked Edges |
+| 35-40 | Colored Regions, then combined with Dots, Required Edges, and Blocked Edges |
+| 41-46 | Stars |
+| 47-52 | Eliminators |
+| 53-58 | Polyominoes — all 9 mechanics now introduced |
+| 59-64 | Symmetry reintroduced, combined with other mechanics |
+| 65-76 | Fresh 2-3 mechanic combinations spanning all 9 mechanics |
+| 77-88 | 4-mechanic combinations |
+| 89-99 | Heaviest main-campaign combinations |
+| 100 | Grand finale |
+| 101-120 | Bonus hard-mode tier — harder than the main finale |
 
 See `plan.md` Section 13 for the exact per-level breakdown and the reasoning behind the ordering.
 
@@ -124,7 +124,7 @@ The full methodology, including exact numeric targets per difficulty tier, lives
 
 ## Status
 
-All 10 planned mechanic phases are implemented (`plan.md` Section 12) — 9 mechanic types across 60 levels. Not yet built (`plan.md` Section 18): a level editor, hint system, daily puzzle, audio, and a few other stretch ideas.
+All 11 planned phases are implemented (`plan.md` Section 12) — 9 mechanic types across a 120-level campaign (100-level main sequence + a 20-level bonus hard tier). Not yet built (`plan.md` Section 18): a level editor, hint system, daily puzzle, audio, and a few other stretch ideas.
 
 ## Further reading
 
