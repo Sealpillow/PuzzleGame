@@ -52,14 +52,16 @@ src/
     Grid.js          — node/edge/cell geometry for an arbitrary width×height board
     Renderer.js      — draws the grid, symbols, and both paths as SVG
     Input.js         — pointer handling: click-to-arm / move-to-trace / click-to-submit, or classic click-and-drag
-    PuzzleLoader.js  — fetches and parses levels.json
+    PuzzleLoader.js  — fetches and parses the active level collection JSON
     Validator.js     — checks a drawn path against a puzzle's active mechanics
     Symmetry.js      — the mirrored-path transform for Symmetry puzzles
     Regions.js       — shared flood-fill region computation (used by Colored Regions, Stars, Eliminators, Polyominoes)
     Eliminators.js   — the Eliminators mechanic (backtracking pairing search)
     Polyominoes.js   — the Polyominoes/Tetris mechanic (exact-cover tiling search)
   puzzles/
-    levels.json      — all 134 levels, one flat ordered array
+    levels.json          — original 134-level campaign source
+    claude-levels.json   — Claude collection shown in the level-source dropdown
+    chatgpt-levels.json  — ChatGPT collection shown in the level-source dropdown
   save/
     SaveManager.js   — localStorage read/write
 index.html
@@ -71,7 +73,7 @@ Every mechanic's validation lives as a plain exported function (not a class) acr
 
 ## Puzzle data format
 
-Every puzzle lives in `src/puzzles/levels.json`, one flat array. A puzzle only includes the fields its active mechanics need — most levels use 0-2 of them:
+Every puzzle collection lives in `src/puzzles/*.json`, one flat array per collection. A puzzle only includes the fields its active mechanics need — most levels use 0-2 of them:
 
 ```js
 {
@@ -103,7 +105,7 @@ The full set of possible fields: `dots`, `blockedEdges`, `requiredEdges`, `trian
 - **Eliminators** (`Eliminators.js`) runs a small backtracking search per region: the puzzle doesn't say which other symbol each eliminator cancels, so it tries every pairing (including two eliminators cancelling each other) and accepts the region if any pairing leaves the survivors satisfying their normal rules.
 - **Polyominoes** (`Polyominoes.js`) runs an exact-cover backtracking tiling search per region. Each piece instance carries `rotationSteps` (0-3 quarter turns) and `rotatable` (boolean): a `rotatable: true` ("slanted") piece may use any of its shape's unique rotations in the search; a `rotatable: false` ("straight") piece must match `rotationSteps` exactly, a genuine solving constraint. `Renderer.js`'s `drawPolyominoIcon` draws the piece as one solid block (flush unit cells with thin divider lines) and rotates that whole block rigidly — axis-aligned at `rotationSteps*90°` for straight pieces, tilted at a fixed shallow non-90°-multiple angle for slanted ones. That tilt is the *only* rotation cue the player gets; there's no separate badge/arrow icon. This is deliberately positive-piece tiling only — no subtractive/negative pieces, since their exact rule in the source game couldn't be reconstructed with confidence.
 
-**Input rules:** snap to the nearest node within a grab radius; can't skip nodes (must be grid-adjacent to the last one); can't cross a blocked edge; can't revisit a node except stepping back onto the immediately-previous one (undo-by-retracing, not a general reverse); no interpolation — the line snaps instantly node-to-node.
+**Input rules:** snap to the nearest node within a grab radius; can't skip nodes (must be grid-adjacent to the last one); can't cross a blocked edge; can't revisit a node except stepping back onto the immediately-previous one (undo-by-retracing, not a general reverse); no interpolation — the line snaps instantly node-to-node. On Symmetry levels, either visible start point may be used.
 
 **Save shape** (`SaveManager.js`, in `localStorage`):
 ```js
@@ -124,7 +126,7 @@ Nine rule types are combined across the level set (for reference here — the ga
 - **Stars** — a star must pair with exactly one other same-colored cell (another star, or a plain colored square) within its region; a region holding a star can't contain anything of a different color.
 - **Eliminators** — cancels exactly one other symbol (a triangle, colored square, star, or another eliminator) in its region; the puzzle doesn't say which one, so it's solved if *any* valid pairing leaves everything else satisfied.
 - **Polyominoes** — a region containing one or more Tetris-style piece icons must be exactly tileable by all of them at once, with no gaps or overlaps. Each piece icon is drawn as one solid block, shown one of two ways: sitting axis-aligned ("straight") means it must fit in exactly that one orientation; tilted at an angle ("slanted") means any of its rotations are allowed.
-- **Symmetry** — a second, mirrored path is drawn automatically alongside yours; both must be valid and the two must never touch. The mirror path's nodes/edges also count toward dots/required/triangles/regions, so Symmetry can combine with the other mechanics rather than staying standalone.
+- **Symmetry** — a second, mirrored path is drawn automatically alongside yours; both must be valid and the two must never touch. On a Symmetry level, your drawn path may start from either visible start point and may finish on either a listed exit or that exit's mirrored counterpart. The mirror path's nodes/edges also count toward dots/required/triangles/regions, so Symmetry can combine with the other mechanics rather than staying standalone.
 
 Most puzzles have a single exit, but a level can define more than one — either ending is a valid solution, so the player may need to plan for more than one possible finish.
 
@@ -152,6 +154,16 @@ Levels are one flat, gated sequence — solving level N unlocks level N+1 (`main
 | 114-134 | Bonus hard-mode tier — harder than the main finale, each a distinct board |
 
 See `level-creation-rulebook.md` for the mechanic-order rationale and the exact difficulty target per tier.
+
+### Current pacing guidance
+
+The app now supports multiple collections through a level-source dropdown. The older Claude collection keeps the longer teaching-block structure above. The newer ChatGPT collection follows these pacing rules:
+
+- Both collections use the exact same engine and mechanic rules; only the authored/generated level set and pacing philosophy differ.
+- A new mechanic should usually get only `1-2` pure introduction levels.
+- Difficulty should start scaling earlier instead of waiting for a long late-game ramp.
+- Once a mechanic is introduced, it should begin combining with previously-taught rules quickly to keep the player engaged.
+- Cell-based mechanic icons must never overlap on the same cell.
 
 ## How levels are actually designed and verified
 

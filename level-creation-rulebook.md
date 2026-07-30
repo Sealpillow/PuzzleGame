@@ -18,7 +18,7 @@ Every puzzle needs `id`, `width`, `height`, `start` (a node `[col,row]`), and `e
 | Stars | A star must pair with exactly one other same-colored cell (another star or a plain colored square) in its region; no other color may be present in that region. | `stars: [[col,row,color], ...]` | 5-point star, colored |
 | Eliminators | Cancels exactly one other symbol (a triangle, colored square, star, or another eliminator) in its region; the puzzle doesn't say which — solved if *any* valid pairing leaves the rest satisfying their normal rules. | `eliminators: [[col,row], ...]` | orange ring with an X |
 | Polyominoes | A region containing one or more piece icons must be exactly tileable by all of them at once, no gaps or overlaps. | `polyominoes: [[col,row,shapeName,rotationSteps,rotatable], ...]` — shapes: `domino`, `tromino-I`, `tromino-L`, `square`, `tetromino-I`/`L`/`T`/`S`; `rotationSteps` 0-3 quarter turns; `rotatable: true` ("slanted") = any rotation is a valid fit; `rotatable: false` ("straight") = must match `rotationSteps` exactly | solid block of flush unit cells with thin divider lines — straight sits axis-aligned at `rotationSteps*90°`, slanted is tilted ~22° regardless of `rotationSteps` |
-| Symmetry | A second path, the 180°-rotation of the drawn one about grid center, is derived automatically; both must be valid and must never share a node. Its nodes/edges also count toward Dots/Required/Triangles/Regions, so it combines with other mechanics instead of staying standalone. | `symmetry: "rotational"` (only value currently supported) | dimmed mirror start/exit markers + a distinctly colored mirror path line |
+| Symmetry | A second path, the 180°-rotation of the drawn one about grid center, is derived automatically; both must be valid and must never share a node. The drawn path may start from either visible start point and may finish on either a listed exit or that exit's mirrored counterpart. Its nodes/edges also count toward Dots/Required/Triangles/Regions, so it combines with other mechanics instead of staying standalone. | `symmetry: "rotational"` (only value currently supported) | dimmed mirror start/exit markers + a distinctly colored mirror path line |
 
 ---
 
@@ -31,13 +31,13 @@ Rationale, for when a new mechanic needs to be slotted in:
 - Symmetry comes next as a paradigm-shift breather (mirroring how the actual Witness introduces it early rather than saving it as a capstone) before the reasoning-heavy mechanics.
 - Triangles (reasoning about one cell), then Colored Regions (reasoning about the whole board), then Stars (a stricter regions variant), then Eliminators and Polyominoes last, since both depend on the player already understanding what a region is.
 
-A new mechanic should get its own full teaching block (see tier structure below) before it starts appearing in combination with others.
+A new mechanic should get only a brief teaching block before it starts appearing in combination with others. Current pacing guidance is `1-2` pure introduction levels, followed quickly by boards that reuse previously-taught mechanics so difficulty starts scaling earlier and player engagement stays high.
 
 ---
 
 ## 3. Tier structure & difficulty targets
 
-The 134-level set is organized into tiers. When adding a level, place it in the tier matching its intent, and hit that tier's solution-count target (see `Design loop` below for how to measure this).
+The original 134-level set is organized into tiers. When adding a level, place it in the tier matching its intent, and hit that tier's solution-count target (see `Design loop` below for how to measure this).
 
 | Levels | Content | Solution-count target |
 |---|---|---|
@@ -52,6 +52,8 @@ The 134-level set is organized into tiers. When adding a level, place it in the 
 | 114-134 | Bonus hard tier — harder than the main finale, every board genuinely distinct (grid shape, corners, walls) | 1, verified against real branching (see below), not a dead maze |
 
 **Honest status of the current set:** the 65-134 range was fully reworked once already to fix severe skeleton repetition (76 of 120 levels originally shared a wall layout with 2+ others). That rework prioritized grid variety and zero redundancy over hitting the exact numeric ceilings above — many combination-tier levels currently land looser than their target (loose counts in the dozens to low hundreds are common in 65-112, not the exception). Zero-redundancy is the non-negotiable bar; the numeric ceiling is an aspiration to tighten toward when touching a level again, not a blocker for new content.
+
+**Current collection guidance:** newer collections do not need to preserve the old long teaching blocks. The preferred pacing is a short ramp: introduce a mechanic in `1-2` pure levels, then start recombining it with earlier rules almost immediately. The goal is to avoid a flat early game and let genuine difficulty scaling begin much sooner than the legacy 134-level structure did.
 
 ---
 
@@ -91,7 +93,7 @@ After authoring a batch (a tier, or any meaningful chunk), re-run the full solve
 
 - **Triangle count of 4 is impossible alone.** A cell's 4 edges form a cycle over 4 nodes; using all 4 forces a revisit, which the engine forbids outright. Max valid standalone count is 3. A count of 4 is only usable paired with an eliminator that cancels it.
 - **Symmetry unsolvable-by-construction cases.** An exit that is the 180°-rotation of the start collides with its own reflection and can never be solved — check this whenever placing start/exit on a Symmetry level. On even-sized grids, the exact grid-center node is its own reflection and must be avoided by the path.
-- **Never stack two mechanic icons on the same cell.** Two symbols sharing a cell (e.g. an eliminator directly on its target triangle) is visually ambiguous — place the second icon on an adjacent cell in the same region instead.
+- **Never stack two mechanic icons on the same cell.** Two symbols sharing a cell (e.g. an eliminator directly on its target triangle) is visually ambiguous and should be treated as outright invalid, not just undesirable. Place the second icon on an adjacent free cell in the same region instead.
 - **Polyomino + `blockedEdges` collisions.** A cut edge frequently bisects the exact fence a polyomino's region needs to stay intact, making the level unsolvable. Fix by repositioning the cut away from the piece's cells, or dropping the cut for that level and relying on other mechanics for tightness.
 - **`satisfiesRegions` (and every region-based mechanic) only treats the drawn path's own edges as flood-fill walls — `blockedEdges` are not walls.** A blocked edge stops the player from drawing through it, but does not by itself separate two cells into different regions; the path itself still has to be routed to do that.
 
