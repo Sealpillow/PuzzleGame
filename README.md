@@ -33,9 +33,11 @@ Then open the printed local address (e.g. `http://localhost:8000`) in your brows
 
 Drag from the glowing start node to an exit tick on the border to solve each puzzle — or click once to arm the line and trace it by moving the mouse without holding the button down, then click again to submit; a classic click-and-drag still works too. Progress is saved locally (`localStorage`).
 
+On touch devices, starting a path also opens a small thumb-scope panel for easier tracing. The scope mirrors the current puzzle area, stays fixed while your finger is dragging, and recenters after release. You can tap outside it to dismiss it, reopen it with the small `Scope` button, and use the top-left cog to switch the scope between right-hand and left-hand placement.
+
 ### Testing
 
-Append `?level=N` to the URL (e.g. `http://localhost:8000/?level=37`) to jump straight to level N — it unlocks free navigation between all 134 levels for that session (labeled "(debug)" in the UI) without touching your real save progress.
+Append `?level=N` to the URL (e.g. `http://localhost:8000/?level=37`) to jump straight to level N — it unlocks free navigation within the active collection for that session (labeled "(debug)" in the UI) without touching your real save progress.
 
 ## Tech stack & constraints
 
@@ -165,6 +167,28 @@ The app now supports multiple collections through a level-source dropdown. The o
 - Once a mechanic is introduced, it should begin combining with previously-taught rules quickly to keep the player engaged.
 - Cell-based mechanic icons must never overlap on the same cell.
 
+### Level design priorities
+
+When we build or revise a collection, these priorities outrank everything else:
+
+1. **Discoverability first.** A level should teach or reinforce a rule through play, not through guesswork or UI explanation.
+2. **No decorative mechanics.** Every active symbol should remove real candidate paths; if stripping it does not matter, it needs to move or be removed.
+3. **Difficulty should feel like it climbs.** If a later level feels softer than the surrounding band, reorder it earlier or replace it rather than leaving a dip in the curve.
+4. **Combinations should start early.** New mechanics get a short pure introduction, then begin mixing with older ones quickly.
+5. **Distinct boards matter.** Avoid repeating the same wall skeleton or visual structure just with different symbol paint.
+6. **Board size is not fake difficulty.** Prefer better logic density before reaching for a larger grid.
+
+### Level authoring thought process
+
+The practical authoring mindset is:
+
+1. Pick what the level is supposed to test: an introduction, a reinforcement, or a hard combination.
+2. Decide which mechanic should be the star and which older mechanics are there to support or complicate it.
+3. Draft the board so the solution space starts broad enough to allow deduction, not just maze-following.
+4. Place symbols to rule out meaningful alternatives, not just to decorate the solved path.
+5. Check whether the level belongs where it currently sits in the collection; if it reads easier than its neighbors, move or replace it.
+6. Only after the logic feels right, verify it with solve-count, redundancy, and branching checks.
+
 ## How levels are actually designed and verified
 
 This part isn't obvious from playing the game, so it's worth stating explicitly: every level past the earliest teaching levels is built and checked against a real methodology, not tuned by feel.
@@ -178,6 +202,14 @@ This part isn't obvious from playing the game, so it's worth stating explicitly:
 New mechanics also get unit-tested against hand-built synthetic puzzles (edge cases like "no valid target to cancel" or "piece only fits with a 180° rotation") before any real level uses them, and every engine change gets a full regression pass — every existing level re-verified, plus a simulated end-to-end playthrough checking unlock gating, solvability, and that no mechanic name ever leaks into the UI — before new content is added.
 
 The full step-by-step design loop, exact per-tier numeric targets, named techniques, and known hazards/hard rules live in `level-creation-rulebook.md`.
+
+### Current collections
+
+- `src/puzzles/claude-levels.json` — 120 levels, longer teaching blocks, gentler early ramp.
+- `src/puzzles/chatgpt-levels.json` — 150 levels, shorter intros, earlier combination play, steeper late ramp.
+- `src/puzzles/levels.json` — the older 134-level single-campaign source kept as legacy reference material.
+
+The important rule is that Claude and ChatGPT collections do **not** have different mechanic rules. They share the same engine, the same validation, the same symbol meanings, and the same authoring constraints. The difference is only in collection structure, pacing, ordering, and generation style.
 
 ## Guiding principles
 
@@ -201,16 +233,17 @@ None of these are built. All could work without a backend, storing data locally 
 - Hint system
 - Accessibility options
 - Keyboard controls
-- Touch gestures
+- Further touch accessibility refinements
 - Audio (line-drawing sound, success/failure tones, ambient background) — nothing in the codebase plays sound today; if ever added, it should never distract from the puzzle.
 
 ## Status
+Desktop tracing, debug solution reveal, and the mobile thumb-scope control (including left/right-hand placement) are all live in the current build.
 
-All 9 mechanics are implemented across a 134-level campaign (113-level main sequence + a 21-level bonus hard tier). Grid shapes and wall layouts are deliberately varied across the combination/hard tiers rather than reusing one skeleton. No audio, level editor, hint system, or daily puzzle yet — see Possible future additions above.
+All 9 mechanics are implemented and playable across multiple collections. The current shipped collections are a 120-level Claude set and a 150-level ChatGPT set, both using the same rule system but different pacing philosophies. No audio, level editor, hint system, or daily puzzle yet — see Possible future additions above.
 
 ## Further reading
 
-`level-creation-rulebook.md` — the level-creation rulebook: mechanic-introduction order and rationale, the tier-by-tier difficulty targets, the step-by-step design/verification loop for a single level, named techniques (Full Cut, density scaling, teaching devices), and hard rules/hazards to avoid (unsatisfiable triangle counts, Symmetry collision cases, mechanic-stacking, Polyomino/blockedEdges conflicts). Read it before adding or editing a level.
+`level-creation-rulebook.md` — the level-creation rulebook: mechanic-introduction order and rationale, collection-specific pacing guidance, design priorities, the step-by-step design/verification loop for a single level, named techniques (Full Cut, density scaling, teaching devices), and hard rules/hazards to avoid (unsatisfiable triangle counts, Symmetry collision cases, mechanic-stacking, Polyomino/blockedEdges conflicts). Read it before adding or editing a level.
 
 ---
 
