@@ -103,6 +103,12 @@ function getDefaultStatusText(puzzle) {
   return isPuzzleCompleted(puzzle) ? 'Solved' : '';
 }
 
+function setSolutionButtonState({ hidden, disabled, text }) {
+  if (hidden !== undefined) solutionBtn.hidden = hidden;
+  if (disabled !== undefined) solutionBtn.disabled = disabled;
+  if (text !== undefined) solutionBtn.textContent = text;
+}
+
 function applyScopeDock() {
   const leftDocked = scopeDock === 'left';
   mobileScopeEl.classList.toggle('scope-left', leftDocked);
@@ -289,9 +295,7 @@ function loadLevel(index) {
     debugMode ? ' (debug)' : ''
   }`;
   statusEl.textContent = alreadySolved ? 'Solved' : '';
-  solutionBtn.hidden = !debugMode;
-  solutionBtn.disabled = false;
-  solutionBtn.textContent = 'Show Solution';
+  setSolutionButtonState({ hidden: !debugMode, disabled: false, text: 'Show Solution' });
   nextBtn.disabled = !alreadySolved || currentIndex >= levels.length - 1;
 
   setCurrentLevelIndex(save, currentIndex, getCurrentCollectionKey());
@@ -332,16 +336,14 @@ function showEmptyCollectionState() {
   pagerLabel.textContent = 'Page 0 of 0';
   pagerPrev.disabled = true;
   pagerNext.disabled = true;
-  solutionBtn.hidden = true;
-  solutionBtn.disabled = true;
-  solutionBtn.textContent = 'Show Solution';
+  setSolutionButtonState({ hidden: true, disabled: true, text: 'Show Solution' });
   nextBtn.disabled = true;
 }
 
 function hideDebugSolution({ clearStatus = false } = {}) {
   if (!renderer) return;
   debugSolutionVisible = false;
-  solutionBtn.textContent = 'Show Solution';
+  setSolutionButtonState({ text: 'Show Solution' });
   renderer.drawPath([]);
   renderer.drawMirrorPath([]);
   syncMobileScope();
@@ -378,7 +380,7 @@ function toggleDebugSolution() {
   renderer.clearSymbolFailures();
   renderer.drawPath(solution, 'success');
   renderer.drawMirrorPath(solution, 'success');
-  solutionBtn.textContent = 'Hide Solution';
+  setSolutionButtonState({ text: 'Hide Solution' });
   statusEl.textContent = 'Solution shown (debug)';
 }
 
