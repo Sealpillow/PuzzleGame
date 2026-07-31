@@ -38,6 +38,9 @@ const nextBtn = document.getElementById('next-btn');
 const statusEl = document.getElementById('status');
 const FAIL_FLASH_MS = 1400;
 const SCOPE_DOCK_KEY = 'insight.scopeDock';
+const SCOPE_INTERACTING_CLASS = 'scope-interacting';
+const SCOPE_FOLLOW_EASE = 0.18;
+const SCOPE_FOLLOW_SETTLE_THRESHOLD = 0.25;
 
 let navPage = 0;
 let collections = {};
@@ -54,6 +57,9 @@ let scopePointerActive = false;
 let scopeLockedViewBox = '';
 let scopeDismissed = false;
 let scopeDock = localStorage.getItem(SCOPE_DOCK_KEY) === 'left' ? 'left' : 'right';
+let scopeViewBoxState = null;
+let scopeTargetViewBox = null;
+let scopeFollowFrame = 0;
 const mobileScopeEnabled = window.matchMedia?.('(pointer: coarse)').matches ?? false;
 
 // Testing backdoor: index.html?level=37 jumps straight to level 37 and unlocks
@@ -137,6 +143,71 @@ function setScopeDock(nextDock) {
   hideScopeSettings();
 }
 
+function parseViewBox(viewBox) {
+  if (!viewBox) return null;
+  const [x, y, width, height] = viewBox.split(/\s+/).map(Number);
+  if ([x, y, width, height].some((value) => Number.isNaN(value))) return null;
+  return { x, y, width, height };
+}
+
+function formatViewBox({ x, y, width, height }) {
+  return `${x} ${y} ${width} ${height}`;
+}
+
+function stopScopeViewBoxAnimation() {
+  if (scopeFollowFrame) {
+    cancelAnimationFrame(scopeFollowFrame);
+    scopeFollowFrame = 0;
+  }
+  scopeViewBoxState = null;
+  scopeTargetViewBox = null;
+}
+
+function renderScopeViewBox(viewBox) {
+  scopeViewBoxState = { ...viewBox };
+  mobileScopeSvg.setAttribute('viewBox', formatViewBox(viewBox));
+}
+
+function stepScopeViewBox() {
+  if (!scopeViewBoxState || !scopeTargetViewBox) {
+    scopeFollowFrame = 0;
+    return;
+  }
+
+  const next = { ...scopeViewBoxState };
+  let settled = true;
+  for (const key of ['x', 'y', 'width', 'height']) {
+    const delta = scopeTargetViewBox[key] - next[key];
+    if (Math.abs(delta) > SCOPE_FOLLOW_SETTLE_THRESHOLD) {
+      next[key] += delta * SCOPE_FOLLOW_EASE;
+      settled = false;
+    } else {
+      next[key] = scopeTargetViewBox[key];
+    }
+  }
+
+  renderScopeViewBox(next);
+  if (settled) {
+    scopeFollowFrame = 0;
+    return;
+  }
+  scopeFollowFrame = requestAnimationFrame(stepScopeViewBox);
+}
+
+function setScopeViewBox(nextViewBox, { immediate = false } = {}) {
+  const parsed = typeof nextViewBox === 'string' ? parseViewBox(nextViewBox) : nextViewBox;
+  if (!parsed) return;
+  scopeTargetViewBox = { ...parsed };
+  if (immediate || !scopeViewBoxState) {
+    stopScopeViewBoxAnimation();
+    renderScopeViewBox(parsed);
+    return;
+  }
+  if (!scopeFollowFrame) {
+    scopeFollowFrame = requestAnimationFrame(stepScopeViewBox);
+  }
+}
+
 function svgPointFor(svgEl, evt) {
   const rect = svgEl.getBoundingClientRect();
   const viewBox = svgEl.viewBox?.baseVal;
@@ -170,6 +241,8 @@ function hideMobileScope() {
   mobileScopeEl.setAttribute('aria-hidden', 'true');
   scopePointerActive = false;
   scopeLockedViewBox = '';
+  stopScopeViewBoxAnimation();
+  document.body.classList.remove(SCOPE_INTERACTING_CLASS);
   syncScopeReopenButton();
 }
 
@@ -221,7 +294,10 @@ function syncMobileScope(path = input?.getPath?.() || []) {
   mobileScopeEl.hidden = false;
   mobileScopeEl.setAttribute('aria-hidden', 'false');
   mobileScopeReopenBtn.hidden = true;
-  mobileScopeSvg.setAttribute('viewBox', scopePointerActive && scopeLockedViewBox ? scopeLockedViewBox : scopeViewBoxFor(tip));
+  const targetViewBox = scopeViewBoxFor(tip);
+  setScopeViewBox(scopePointerActive && scopeLockedViewBox ? scopeLockedViewBox : targetViewBox, {
+    immediate: !scopePointerActive,
+  });
   scopeRenderer.drawPath(path, 'drawing');
   scopeRenderer.drawMirrorPath(path, 'drawing');
 }
@@ -241,6 +317,25 @@ function handleScopeStep(evt) {
       hideMobileScope();
     }
   }
+}
+
+function beginScopePointer(evt) {
+  scopePointerActive = true;
+  scopeLockedViewBox = '';
+  document.body.classList.add(SCOPE_INTERACTING_CLASS);
+  if (evt.pointerId !== undefined && mobileScopeSvg.setPointerCapture) {
+    mobileScopeSvg.setPointerCapture(evt.pointerId);
+  }
+}
+
+function endScopePointer(evt) {
+  if (evt?.pointerId !== undefined && mobileScopeSvg.hasPointerCapture?.(evt.pointerId)) {
+    mobileScopeSvg.releasePointerCapture(evt.pointerId);
+  }
+  scopePointerActive = false;
+  scopeLockedViewBox = '';
+  document.body.classList.remove(SCOPE_INTERACTING_CLASS);
+  syncMobileScope();
 }
 
 async function init() {
@@ -461,10 +556,9 @@ levelSourceSelect.addEventListener('change', () => {
 
 mobileScopeSvg.addEventListener('pointerdown', (evt) => {
   if (!mobileScopeEnabled || !input?.isTracing?.()) return;
-  scopePointerActive = true;
-  scopeLockedViewBox = mobileScopeSvg.getAttribute('viewBox') || '';
+  beginScopePointer(evt);
   handleScopeStep(evt);
-});
+}, { passive: false });
 
 mobileScopeReopenBtn.addEventListener('click', () => {
   reopenMobileScope();
@@ -497,18 +591,14 @@ document.addEventListener('pointerdown', (evt) => {
 mobileScopeSvg.addEventListener('pointermove', (evt) => {
   if (!scopePointerActive) return;
   handleScopeStep(evt);
+}, { passive: false });
+
+window.addEventListener('pointerup', (evt) => {
+  endScopePointer(evt);
 });
 
-window.addEventListener('pointerup', () => {
-  scopePointerActive = false;
-  scopeLockedViewBox = '';
-  syncMobileScope();
-});
-
-window.addEventListener('pointercancel', () => {
-  scopePointerActive = false;
-  scopeLockedViewBox = '';
-  syncMobileScope();
+window.addEventListener('pointercancel', (evt) => {
+  endScopePointer(evt);
 });
 
 init();

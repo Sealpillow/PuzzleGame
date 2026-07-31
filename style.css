@@ -40,6 +40,11 @@ body {
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
+body.scope-interacting {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 .app {
   display: flex;
   flex-direction: column;
@@ -97,6 +102,8 @@ body {
   backdrop-filter: blur(12px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
   z-index: 30;
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 
 .mobile-scope.scope-left {
@@ -117,6 +124,8 @@ body {
   border-radius: 10px;
   overflow: hidden;
   background: #1e242c;
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 
 .mobile-scope-board {
@@ -202,7 +211,7 @@ body {
 
 .scope-settings-panel {
   top: 4rem;
-  width: min(12rem, calc(100vw - 2rem));
+  width: min(14rem, calc(100vw - 2rem));
   padding: 0.8rem;
   border: 1px solid rgba(215, 221, 227, 0.18);
   border-radius: 14px;
@@ -220,6 +229,16 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
+}
+
+.scope-settings-options button {
+  min-width: 0;
+  padding: 0.55rem 0.6rem;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .scope-settings-options button.active {
