@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 120" data-cols="21" data-rows="3" data-level-id="combo-3" data-level-title="The Living Labyrinth">
+<rect class="tile tile-wall" data-x="0" data-y="0" data-kind="wall" x="0" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="1" data-y="0" data-kind="wall" x="40" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="2" data-y="0" data-kind="wall" x="80" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="3" data-y="0" data-kind="wall" x="120" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="4" data-y="0" data-kind="wall" x="160" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="5" data-y="0" data-kind="wall" x="200" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="6" data-y="0" data-kind="wall" x="240" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="7" data-y="0" data-kind="wall" x="280" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="8" data-y="0" data-kind="wall" x="320" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="9" data-y="0" data-kind="wall" x="360" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="10" data-y="0" data-kind="wall" x="400" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="11" data-y="0" data-kind="wall" x="440" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="12" data-y="0" data-kind="wall" x="480" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="13" data-y="0" data-kind="wall" x="520" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="14" data-y="0" data-kind="wall" x="560" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="15" data-y="0" data-kind="wall" x="600" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="16" data-y="0" data-kind="wall" x="640" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="17" data-y="0" data-kind="wall" x="680" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="18" data-y="0" data-kind="wall" x="720" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="19" data-y="0" data-kind="wall" x="760" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="20" data-y="0" data-kind="wall" x="800" y="0" width="40" height="40" />
+<rect class="tile tile-wall" data-x="0" data-y="1" data-kind="wall" x="0" y="40" width="40" height="40" />
+<rect class="tile tile-start" data-x="1" data-y="1" data-kind="start" x="40" y="40" width="40" height="40" />
+<circle class="start-marker" cx="60" cy="60" r="6" />
+<rect class="tile tile-floor" data-x="2" data-y="1" data-kind="floor" x="80" y="40" width="40" height="40" />
+<rect class="tile tile-floor" data-x="3" data-y="1" data-kind="floor" x="120" y="40" width="40" height="40" />
+<g class="door door-oneway" data-x="4" data-y="1" data-type="oneway" data-dir="E" transform="translate(160 40)"><rect class="tile-base" x="0" y="0" width="40" height="40" /><g class="door-symbol door-arrow" transform="rotate(0 20 20)"><path d="M9,10 L31,20 L9,30 Z" /></g></g>
+<rect class="tile tile-floor" data-x="5" data-y="1" data-kind="floor" x="200" y="40" width="40" height="40" />
+<rect class="tile tile-floor" data-x="6" data-y="1" data-kind="floor" x="240" y="40" width="40" height="40" />
+<rect class="tile tile-floor" data-x="7" data-y="1" data-kind="floor" data-trigger-group="blue" x="280" y="40" width="40" height="40" />
+<g transform="translate(280 40)"><path class="trigger-symbol group-blue" d="M20,10 L30,20 L20,30 L10,20 Z" /></g>
+<rect class="tile tile-floor" data-x="8" data-y="1" data-kind="floor" x="320" y="40" width="40" height="40" />
+<rect class="tile tile-floor" data-x="9" data-y="1" data-kind="floor" x="360" y="40" width="40" height="40" />
+<g class="door door-toggle group-blue" data-x="10" data-y="1" data-type="toggle" data-group-id="blue" data-initial-open="false" transform="translate(400 40)"><rect class="tile-base" x="0" y="0" width="40" height="40" /><g class="door-symbol toggle-open-art"><circle cx="20" cy="20" r="13" /></g><g class="door-symbol toggle-closed-art"><circle cx="20" cy="20" r="13" /><path d="M10,10 L30,30 M30,10 L10,30" /></g></g>
+<rect class="tile tile-floor" data-x="11" data-y="1" data-kind="floor" x="440" y="40" width="40" height="40" />
+<rect class="tile tile-floor" data-x="12" data-y="1" data-kind="floor" x="480" y="40" width="40" height="40" />
+<g class="door door-limited" data-x="13" data-y="1" data-type="limited" data-uses="1" transform="translate(520 40)"><rect class="tile-base" x="0" y="0" width="40" height="40" /><circle class="door-symbol door-ring" cx="20" cy="20" r="13" /><text class="uses-label" x="20" y="25" text-anchor="middle">1</text></g>
+<rect class="tile tile-floor" data-x="14" data-y="1" data-kind="floor" x="560" y="40" width="40" height="40" />
+<rect class="tile tile-floor" data-x="15" data-y="1" data-kind="floor" x="600" y="40" width="40" height="40" />
+<g class="door door-closing" data-x="16" data-y="1" data-type="closing" transform="translate(640 40)"><rect class="tile-base" x="0" y="0" width="40" height="40" /><circle class="door-symbol door-ring" cx="20" cy="20" r="12" /><rect class="door-shutter" x="4" y="4" width="32" height="32" /></g>
+<rect class="tile tile-floor" data-x="17" data-y="1" data-kind="floor" x="680" y="40" width="40" height="40" />
+<rect class="tile tile-floor" data-x="18" data-y="1" data-kind="floor" x="720" y="40" width="40" height="40" />
+<rect class="tile tile-exit" data-x="19" data-y="1" data-kind="exit" x="760" y="40" width="40" height="40" />
+<rect class="exit-marker" x="772" y="52" width="16" height="16" />
+<rect class="tile tile-wall" data-x="20" data-y="1" data-kind="wall" x="800" y="40" width="40" height="40" />
+<rect class="tile tile-wall" data-x="0" data-y="2" data-kind="wall" x="0" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="1" data-y="2" data-kind="wall" x="40" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="2" data-y="2" data-kind="wall" x="80" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="3" data-y="2" data-kind="wall" x="120" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="4" data-y="2" data-kind="wall" x="160" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="5" data-y="2" data-kind="wall" x="200" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="6" data-y="2" data-kind="wall" x="240" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="7" data-y="2" data-kind="wall" x="280" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="8" data-y="2" data-kind="wall" x="320" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="9" data-y="2" data-kind="wall" x="360" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="10" data-y="2" data-kind="wall" x="400" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="11" data-y="2" data-kind="wall" x="440" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="12" data-y="2" data-kind="wall" x="480" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="13" data-y="2" data-kind="wall" x="520" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="14" data-y="2" data-kind="wall" x="560" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="15" data-y="2" data-kind="wall" x="600" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="16" data-y="2" data-kind="wall" x="640" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="17" data-y="2" data-kind="wall" x="680" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="18" data-y="2" data-kind="wall" x="720" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="19" data-y="2" data-kind="wall" x="760" y="80" width="40" height="40" />
+<rect class="tile tile-wall" data-x="20" data-y="2" data-kind="wall" x="800" y="80" width="40" height="40" />
+</svg>

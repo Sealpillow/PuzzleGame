@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Vision - A Puzzle Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1>The Vision</h1>
+      <p id="puzzle-title" class="puzzle-title"></p>
+    </header>
+
+    <div class="board-wrap">
+      <svg id="board" class="board" viewBox="0 0 480 480">
+        <g class="grid-lines"></g>
+        <g class="symbols"></g>
+        <g class="player-path"></g>
+        <g class="mirror-path"></g>
+        <g class="nodes"></g>
+      </svg>
+    </div>
+
+    <button id="scope-settings-btn" class="scope-settings-btn" type="button" aria-expanded="false" aria-label="Scope settings">
+      &#9881;
+    </button>
+    <section id="scope-settings-panel" class="scope-settings-panel" hidden aria-hidden="true" aria-label="Scope settings">
+      <p class="scope-settings-title">Scope View</p>
+      <div class="scope-settings-options">
+        <button id="scope-view-on" type="button" data-scope-view="on">On</button>
+        <button id="scope-view-off" type="button" data-scope-view="off">Off</button>
+      </div>
+      <p class="scope-settings-title scope-settings-subtitle">Scope Position</p>
+      <div class="scope-settings-options">
+        <button id="scope-side-right" type="button" data-scope-side="right">Right Hand</button>
+        <button id="scope-side-left" type="button" data-scope-side="left">Left Hand</button>
+      </div>
+      <p class="scope-settings-title scope-settings-subtitle">Scope Follow Speed</p>
+      <div class="scope-slider-group">
+        <div class="scope-slider-row">
+          <input
+            id="scope-follow-speed"
+            class="scope-slider"
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value="50"
+            aria-label="Scope follow speed"
+          />
+          <div class="scope-value-stack">
+            <input
+              id="scope-follow-speed-number"
+              class="scope-number-input"
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              value="50"
+              inputmode="numeric"
+              aria-label="Scope follow speed value"
+            />
+          </div>
+        </div>
+        <div class="scope-slider-meta" aria-hidden="true">
+          <div class="scope-slider-labels">
+            <span>Steady</span>
+            <span>Fast</span>
+          </div>
+          <span id="scope-follow-speed-label" class="scope-settings-value">Balanced</span>
+        </div>
+      </div>
+    </section>
+
+    <p id="status" class="status" aria-live="polite"></p>
+
+    <div class="controls">
+      <button id="reset-btn" type="button">Reset</button>
+      <button id="guide-btn" type="button" hidden>Guide</button>
+      <button id="solution-btn" type="button" hidden>Show Sol.</button>
+      <button id="next-btn" type="button" disabled>Next Level</button>
+    </div>
+
+    <section
+      id="debug-guide"
+      class="debug-guide"
+      hidden
+      aria-hidden="true"
+      aria-labelledby="debug-guide-title"
+    >
+      <div class="debug-guide-backdrop" aria-hidden="true"></div>
+      <div class="debug-guide-panel" role="dialog" aria-modal="true" aria-labelledby="debug-guide-title">
+        <div class="debug-guide-header">
+          <div>
+            <p class="debug-guide-kicker">Debug</p>
+            <h2 id="debug-guide-title">Symbol Guide</h2>
+          </div>
+          <button id="debug-guide-close" class="debug-guide-close" type="button" aria-label="Close guide">
+            &times;
+          </button>
+        </div>
+        <p id="debug-guide-subtitle" class="debug-guide-subtitle"></p>
+        <div id="debug-guide-content" class="debug-guide-content"></div>
+      </div>
+    </section>
+
+    <div class="lower-panel">
+      <section class="nav-panel" aria-label="Level navigation">
+        <nav id="puzzle-nav" class="puzzle-nav" aria-label="Level selection"></nav>
+        <div id="puzzle-pager" class="puzzle-pager">
+          <button id="pager-prev" type="button">&lsaquo;</button>
+          <span id="pager-label"></span>
+          <button id="pager-next" type="button">&rsaquo;</button>
+        </div>
+      </section>
+
+      <aside id="mobile-scope" class="mobile-scope" hidden aria-hidden="true">
+        <div class="mobile-scope-header">
+          <span>Thumb Scope</span>
+          <div class="mobile-scope-info-wrap">
+            <button
+              id="mobile-scope-info-btn"
+              class="mobile-scope-info-btn"
+              type="button"
+              aria-expanded="false"
+              aria-label="What is this?"
+            >i</button>
+            <p id="mobile-scope-hint" class="mobile-scope-hint" hidden aria-hidden="true">Drag or tap here to steer the path. The scope softly follows your path as you move.</p>
+          </div>
+        </div>
+        <div class="mobile-scope-stage">
+          <svg id="mobile-scope-board" class="mobile-scope-board" viewBox="0 0 480 480">
+            <g class="grid-lines"></g>
+            <g class="symbols"></g>
+            <g class="player-path"></g>
+            <g class="mirror-path"></g>
+            <g class="nodes"></g>
+          </svg>
+          <div class="mobile-scope-reticle" aria-hidden="true"></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

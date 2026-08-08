@@ -1,0 +1,17 @@
+1st half (core TheWitness)
+Dots
+Blocked Edges
+Required Edges
+Triangles
+Colored Regions
+Stars
+Eliminators
+Polyominoes
+
+2nd half (new Mechanics)
+Turn Nodes
+Straight Nodes
+Horizontal Nodes
+Vertical Nodes
+Corner Nodes
+Region Size Numbers

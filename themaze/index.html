@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Door Labyrinth</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1>Door Labyrinth</h1>
+      <p id="level-subtitle" class="level-subtitle"></p>
+    </header>
+
+    <section id="game-screen" class="game-screen">
+      <div id="board-wrap" class="board-wrap">
+        <div id="board-container" class="board-container"></div>
+        <p id="trapped-hint" class="trapped-hint" hidden>No path to the exit right now</p>
+      </div>
+
+      <div class="controls">
+        <button id="undo-btn" type="button">Undo</button>
+        <button id="restart-btn" type="button">Restart</button>
+        <button id="pause-btn" type="button">Pause</button>
+        <button id="mute-btn" type="button" class="icon-btn" aria-label="Toggle sound">&#128266;</button>
+      </div>
+
+      <p class="hint">Arrows / WASD to move &middot; Z to undo &middot; R to restart</p>
+
+      <div class="lower-panel">
+        <nav id="puzzle-nav" class="puzzle-nav" aria-label="Level selection"></nav>
+        <div id="puzzle-pager" class="puzzle-pager">
+          <button id="pager-prev" type="button" aria-label="Previous levels">&lsaquo;</button>
+          <span id="pager-label" class="pager-label"></span>
+          <button id="pager-next" type="button" aria-label="Next levels">&rsaquo;</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="win-overlay" class="overlay" hidden aria-hidden="true">
+      <div class="overlay-panel">
+        <h2>Solved</h2>
+        <div class="overlay-actions">
+          <button id="win-close-btn" type="button">Close</button>
+          <button id="win-next-btn" type="button">Next Level</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="pause-overlay" class="overlay" hidden aria-hidden="true">
+      <div class="overlay-panel">
+        <h2>Paused</h2>
+        <div class="overlay-actions">
+          <button id="pause-resume-btn" type="button">Resume</button>
+          <button id="pause-restart-btn" type="button">Restart</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

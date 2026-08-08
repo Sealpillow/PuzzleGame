@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Vision - Puzzle Editor</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="editor.css" />
+</head>
+<body>
+  <div class="editor-app">
+    <header class="editor-header">
+      <h1>Puzzle Editor</h1>
+      <a class="editor-back-link" href="index.html">&larr; Back to game</a>
+    </header>
+
+    <section class="editor-toolbar">
+      <label class="toolbar-field">
+        <span>ID</span>
+        <input id="puzzle-id" type="text" value="custom_level" />
+      </label>
+      <label class="toolbar-field">
+        <span>Width</span>
+        <input id="puzzle-width" type="number" min="1" max="8" value="4" />
+      </label>
+      <label class="toolbar-field">
+        <span>Height</span>
+        <input id="puzzle-height" type="number" min="1" max="8" value="4" />
+      </label>
+      <button id="resize-btn" type="button">Resize</button>
+      <label class="toolbar-field">
+        <span>Load level</span>
+        <select id="load-existing-select">
+          <option value="">Existing levels&hellip;</option>
+        </select>
+      </label>
+      <button id="new-puzzle-btn" type="button">New</button>
+    </section>
+
+    <div class="editor-main">
+      <aside class="editor-palette">
+        <h2>Path Points</h2>
+        <div class="palette-group" data-group="point">
+          <button type="button" class="palette-btn" data-tool="start">Start</button>
+          <button type="button" class="palette-btn" data-tool="exits">Exit</button>
+          <button type="button" class="palette-btn" data-tool="dots">Dot</button>
+        </div>
+
+        <h2>Directional Nodes</h2>
+        <div class="palette-group" data-group="directional">
+          <button type="button" class="palette-btn" data-tool="turnNodes">Turn</button>
+          <button type="button" class="palette-btn" data-tool="straightNodes">Straight</button>
+          <button type="button" class="palette-btn" data-tool="horizontalNodes">Horizontal</button>
+          <button type="button" class="palette-btn" data-tool="verticalNodes">Vertical</button>
+          <button type="button" class="palette-btn" data-tool="cornerNodes">Corner</button>
+        </div>
+
+        <h2>Edges</h2>
+        <div class="palette-group" data-group="edge">
+          <button type="button" class="palette-btn" data-tool="blockedEdges">Blocked</button>
+          <button type="button" class="palette-btn" data-tool="requiredEdges">Required</button>
+        </div>
+
+        <h2>Cell Symbols</h2>
+        <div class="palette-group" data-group="cell">
+          <button type="button" class="palette-btn" data-tool="triangles">Triangle</button>
+          <button type="button" class="palette-btn" data-tool="cellColors">Color</button>
+          <button type="button" class="palette-btn" data-tool="stars">Star</button>
+          <button type="button" class="palette-btn" data-tool="eliminators">Eliminator</button>
+          <button type="button" class="palette-btn" data-tool="polyominoes">Polyomino</button>
+          <button type="button" class="palette-btn" data-tool="regionSizes">Region Size</button>
+        </div>
+
+        <h2>Utility</h2>
+        <div class="palette-group" data-group="utility">
+          <button type="button" class="palette-btn palette-btn-erase" data-tool="erase">Erase</button>
+        </div>
+
+        <div id="tool-options" class="tool-options" hidden></div>
+      </aside>
+
+      <div class="editor-board-column">
+        <div class="editor-board-toolbar">
+          <button id="playtest-toggle" type="button">Play Test</button>
+          <button id="reset-path-btn" type="button" hidden>Reset Path</button>
+          <span id="active-tool-label" class="active-tool-label"></span>
+        </div>
+        <p id="editor-toast" class="editor-toast" aria-live="polite"></p>
+        <div class="board-wrap">
+          <svg id="board" class="board" viewBox="0 0 480 480">
+            <g class="grid-lines"></g>
+            <g class="symbols"></g>
+            <g class="player-path"></g>
+            <g class="mirror-path"></g>
+            <g class="nodes"></g>
+          </svg>
+        </div>
+        <p id="playtest-status" class="playtest-status" aria-live="polite"></p>
+      </div>
+
+      <aside class="editor-sidebar">
+        <section class="sidebar-panel">
+          <h2>Solver</h2>
+          <p id="solver-status" class="solver-status">&mdash;</p>
+          <button id="show-solution-btn" type="button">Show Solution</button>
+          <ul id="warnings-list" class="warnings-list"></ul>
+        </section>
+
+        <section class="sidebar-panel">
+          <h2>Export</h2>
+          <textarea id="export-json" class="json-textarea" readonly rows="10"></textarea>
+          <div class="sidebar-actions">
+            <button id="copy-json-btn" type="button">Copy JSON</button>
+            <button id="download-json-btn" type="button">Download</button>
+          </div>
+        </section>
+
+        <section class="sidebar-panel">
+          <h2>Import</h2>
+          <textarea id="import-json" class="json-textarea" rows="6" placeholder="Paste a puzzle JSON object here"></textarea>
+          <div class="sidebar-actions">
+            <button id="load-json-btn" type="button">Load JSON</button>
+          </div>
+          <p id="import-error" class="import-error" aria-live="polite"></p>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <script type="module" src="editor.js"></script>
+</body>
+</html>
