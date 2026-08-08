@@ -35,6 +35,33 @@
         </select>
       </label>
       <button id="new-puzzle-btn" type="button">New</button>
+
+      <div class="editor-toolbar-panels">
+        <section class="toolbar-panel toolbar-panel-solver">
+          <h2>Solver</h2>
+          <p id="solver-status" class="solver-status">&mdash;</p>
+          <button id="show-solution-btn" type="button">Show Solution</button>
+          <ul id="warnings-list" class="warnings-list"></ul>
+        </section>
+
+        <section class="toolbar-panel toolbar-panel-export">
+          <h2>Export</h2>
+          <textarea id="export-json" class="json-textarea" readonly rows="8"></textarea>
+          <div class="sidebar-actions">
+            <button id="copy-json-btn" type="button">Copy JSON</button>
+            <button id="download-json-btn" type="button">Download</button>
+          </div>
+        </section>
+
+        <section class="toolbar-panel toolbar-panel-import">
+          <h2>Import</h2>
+          <textarea id="import-json" class="json-textarea" rows="5" placeholder="Paste a puzzle JSON object here"></textarea>
+          <div class="sidebar-actions">
+            <button id="load-json-btn" type="button">Load JSON</button>
+          </div>
+          <p id="import-error" class="import-error" aria-live="polite"></p>
+        </section>
+      </div>
     </section>
 
     <div class="editor-main">
@@ -97,33 +124,6 @@
         </div>
         <p id="playtest-status" class="playtest-status" aria-live="polite"></p>
       </div>
-
-      <aside class="editor-sidebar">
-        <section class="sidebar-panel">
-          <h2>Solver</h2>
-          <p id="solver-status" class="solver-status">&mdash;</p>
-          <button id="show-solution-btn" type="button">Show Solution</button>
-          <ul id="warnings-list" class="warnings-list"></ul>
-        </section>
-
-        <section class="sidebar-panel">
-          <h2>Export</h2>
-          <textarea id="export-json" class="json-textarea" readonly rows="10"></textarea>
-          <div class="sidebar-actions">
-            <button id="copy-json-btn" type="button">Copy JSON</button>
-            <button id="download-json-btn" type="button">Download</button>
-          </div>
-        </section>
-
-        <section class="sidebar-panel">
-          <h2>Import</h2>
-          <textarea id="import-json" class="json-textarea" rows="6" placeholder="Paste a puzzle JSON object here"></textarea>
-          <div class="sidebar-actions">
-            <button id="load-json-btn" type="button">Load JSON</button>
-          </div>
-          <p id="import-error" class="import-error" aria-live="polite"></p>
-        </section>
-      </aside>
     </div>
   </div>
 
