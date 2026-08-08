@@ -84,6 +84,9 @@ const downloadJsonBtn = document.getElementById('download-json-btn');
 const importJsonEl = document.getElementById('import-json');
 const loadJsonBtn = document.getElementById('load-json-btn');
 const importErrorEl = document.getElementById('import-error');
+const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+const editorSidebarEl = document.getElementById('editor-sidebar');
 
 function defaultPuzzle() {
   return {
@@ -112,6 +115,7 @@ let playtestActive = false;
 let playtestInput = null;
 let shownSolutions = [];
 let shownSolutionIndex = 0;
+let puzzleDirty = false;
 let solveTimer = 0;
 let toastTimer = 0;
 let existingLevelsById = new Map();
@@ -248,6 +252,7 @@ function applyDirectionalNode(field, node) {
 }
 
 function applyNodeTool(field, node) {
+  puzzleDirty = true;
   if (field === 'exits' || field === 'dots') {
     toggleInNodeList(field, node);
     return;
@@ -256,6 +261,7 @@ function applyNodeTool(field, node) {
 }
 
 function applyEdgeTool(field, edge) {
+  puzzleDirty = true;
   const key = grid.edgeKey(edge[0], edge[1]);
   const other = field === 'blockedEdges' ? 'requiredEdges' : 'blockedEdges';
   const hasSame = (puzzle[field] || []).some((e) => grid.edgeKey(e[0], e[1]) === key);
@@ -298,6 +304,7 @@ function valuesEqual(a, b) {
 }
 
 function applyCellTool(field, cell) {
+  puzzleDirty = true;
   const occupied = cellFieldAt(cell);
   const nextValue = cellValueFor(field, cell);
 
@@ -339,6 +346,7 @@ function eraseCell(cell) {
 }
 
 function eraseAt(point) {
+  puzzleDirty = true;
   const { node, dist: nodeDist } = nearestNode(point);
   if (nodeDist <= grid.cellSize * 0.35) {
     eraseNode(node);
@@ -361,6 +369,7 @@ function handleBoardClick(evt) {
     const { node, dist } = nearestNode(point);
     if (dist > grid.cellSize * 0.6) return;
     puzzle.start = node;
+    puzzleDirty = true;
     afterEdit();
     return;
   }
@@ -410,6 +419,7 @@ function pruneOutOfBounds() {
 }
 
 function resizePuzzle(newWidth, newHeight) {
+  puzzleDirty = true;
   stopPlaytest();
   puzzle.width = newWidth;
   puzzle.height = newHeight;
@@ -486,6 +496,28 @@ function sameSolutionPath(a, b) {
   return a.length === b.length && a.every(([col, row], i) => col === b[i][0] && row === b[i][1]);
 }
 
+function dedupeSolutions(paths) {
+  const solutions = [];
+  for (const path of paths) {
+    if (solutions.length >= SHOWN_SOLUTION_CAP) break;
+    if (solutions.some((existing) => sameSolutionPath(existing, path))) continue;
+    solutions.push(path);
+  }
+  return solutions;
+}
+
+// Generator-produced levels carry their own already-computed solutionPaths (see
+// scripts/level-generator.mjs) - reading that field means a freshly loaded level shows a solution
+// instantly and reliably, even on the dense 101+ boards where a live budget-capped DFS can fail
+// outright (see src/engine/Solver.js's sortTowardExits comment). Only trusted while the puzzle
+// hasn't been edited since load - any editor mutation flips puzzleDirty and forces a live search.
+function collectShownSolutions() {
+  if (!puzzleDirty && puzzle.solutionPaths && puzzle.solutionPaths.length) {
+    return dedupeSolutions(puzzle.solutionPaths);
+  }
+  return dedupeSolutions(findSolutionPaths(puzzle, SHOWN_SOLUTION_CAP, SOLVER_MAX_EXPANSIONS));
+}
+
 function hideSolution() {
   if (!shownSolutions.length) return;
   shownSolutions = [];
@@ -520,13 +552,7 @@ function toggleSolution() {
     return;
   }
 
-  const found = findSolutionPaths(puzzle, SHOWN_SOLUTION_CAP, SOLVER_MAX_EXPANSIONS);
-  const solutions = [];
-  for (const path of found) {
-    if (solutions.length >= SHOWN_SOLUTION_CAP) break;
-    if (solutions.some((existing) => sameSolutionPath(existing, path))) continue;
-    solutions.push(path);
-  }
+  const solutions = collectShownSolutions();
 
   if (!solutions.length) {
     showToast('No solution found.');
@@ -753,6 +779,7 @@ function setActiveTool(tool) {
 
 function loadPuzzleIntoEditor(data) {
   stopPlaytest();
+  puzzleDirty = false;
   puzzle = structuredClone(data);
   puzzle.width = puzzle.width ?? 4;
   puzzle.height = puzzle.height ?? 4;
@@ -830,6 +857,25 @@ playtestToggleBtn.addEventListener('click', () => {
 });
 
 showSolutionBtn.addEventListener('click', toggleSolution);
+
+function openSidebarDrawer() {
+  editorSidebarEl.classList.add('open');
+  sidebarBackdrop.hidden = false;
+  sidebarToggleBtn.setAttribute('aria-expanded', 'true');
+}
+
+function closeSidebarDrawer() {
+  editorSidebarEl.classList.remove('open');
+  sidebarBackdrop.hidden = true;
+  sidebarToggleBtn.setAttribute('aria-expanded', 'false');
+}
+
+sidebarToggleBtn.addEventListener('click', () => {
+  if (editorSidebarEl.classList.contains('open')) closeSidebarDrawer();
+  else openSidebarDrawer();
+});
+
+sidebarBackdrop.addEventListener('click', closeSidebarDrawer);
 
 resetPathBtn.addEventListener('click', () => {
   if (!playtestInput) return;
