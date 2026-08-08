@@ -193,12 +193,6 @@ const DEBUG_GUIDE_ITEMS = [
     symbol: 'Ivory cream size numbers',
     description: 'Each numbered cell adds that many cells to its region\'s required size. If multiple numbers share one region, add them together; that region must contain exactly that many cells total.',
   },
-  {
-    key: 'symmetry',
-    title: 'Symmetry',
-    symbol: 'Mirror path / twin start-end markers',
-    description: 'Your drawn path creates a second 180-degree mirrored path; both paths must be valid and cannot touch.',
-  },
 ];
 
 syncLayoutMode();
@@ -592,18 +586,6 @@ function createGuidePreview(item) {
         'dominant-baseline': 'central',
         transform: 'rotate(-6 36 24)',
       })).textContent = '4';
-      break;
-    case 'symmetry':
-      svg.appendChild(guideSvgEl('path', {
-        d: 'M14 31 L14 13 L34 13',
-        class: 'player-line',
-      }));
-      svg.appendChild(guideSvgEl('circle', { cx: 14, cy: 31, r: 7, class: 'start-node' }));
-      svg.appendChild(guideSvgEl('path', {
-        d: 'M58 13 L58 31 L38 31',
-        class: 'mirror-line',
-      }));
-      svg.appendChild(guideSvgEl('circle', { cx: 58, cy: 13, r: 6, class: 'mirror-start-node' }));
       break;
     default:
       break;
