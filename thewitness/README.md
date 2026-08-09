@@ -267,6 +267,24 @@ Desktop tracing, debug solution reveal, the debug symbol guide, and the mobile t
 
 The shared engine now covers the original core mechanics plus the newer node-direction family and region-size numbers, and levels 201-300 add a second win condition (multi-solution, see Mechanics above) on top of the original single-solution one. A standalone puzzle editor (`editor.html`/`editor.js`) is also live - see below. No audio, hint system, or daily puzzle yet - see Possible future additions above.
 
+## Puzzle Editor
+
+`editor.html` is a standalone visual authoring tool for the puzzle JSON format described above - open it directly (`/editor.html`, same static server as the game) rather than through any in-game link. It's for building and testing levels by hand; it never touches `localStorage` save data and has no effect on the live game beyond producing/consuming the same JSON files.
+
+**Toolbar** (top): puzzle metadata (`ID`, `Width`, `Height` + `Resize`), a `Load level` dropdown that pulls every level straight out of `levels.json`, and `New` to reset to a blank 4x4 board. The right side is the **solver cluster**, live on every edit:
+- A status line - `N solutions.`, `Unsolvable - 0 valid solutions.`, `Truncated - search budget hit...`, or `200+ solutions (capped).` - from a cheap, redundancy-check-only count (`SolutionCounter.js`), debounced 150ms after each edit.
+- `Limit` - how many distinct solutions `Show Solution` will search for/cycle through, 1-50 (typed values outside that range are clamped and the field corrects itself). This is editor-only state; it has no effect on the game's own debug "Show Sol." control, which keeps its own fixed cap of 3.
+- `Show Solution` - finds and draws one valid path on the board; clicking again cycles to the next distinct one (`Sol. 2/5`, etc.), wrapping back to hidden after the last. If the loaded level already carries a `solutionPaths` field (see Puzzle data format above) and hasn't been edited since loading, it reads that instantly instead of searching live - editing anything (placing/erasing a symbol, moving Start, resizing) invalidates that shortcut and falls back to a live, budget-capped search.
+- A warnings line below (e.g. a triangle with count 4 but no eliminator anywhere, or `regionSizes` combined with `eliminators`) for common design mistakes the validator can't catch structurally.
+
+**Palette** (left): one icon button per mechanic, grouped under Path Points / Directional Nodes / Edges / Cell Symbols / Utility. Click a button to arm that tool, then click a node/edge/cell on the board to place or toggle it there; parameterized tools (triangle count, star/color, corner orientation, polyomino shape/rotation, region-size value) show their options directly below the palette while active. `Erase` removes whatever occupies the clicked node/edge/cell.
+
+**Board** (center): click to place with the active tool. `Play Test` switches the board into the same tracing input the real game uses, so you can draw and submit a path exactly as a player would and see pass/fail feedback (including which symbols failed) without leaving the editor.
+
+**Export / Import** (right, behind a `Panels` toggle on narrow windows): `Export` shows the puzzle's current JSON live and can copy it to the clipboard or download it as a file; `Import` accepts a pasted puzzle JSON object and loads it into the editor, replacing whatever's currently open.
+
+On narrow/mobile widths the whole layout compacts into one screen with no page scrolling: the tool palette becomes a horizontally-scrollable strip, and Export/Import move into a slide-in drawer opened via the `Panels` button (the solver cluster stays in the toolbar at every width).
+
 ## Further reading
 
 `level-creation-rulebook.md` - the authoritative level-design document for mechanic order, collection philosophy, generator intent, design reasoning, verification flow, constraint principles, and hard rules. Read it before adding or editing a level.
