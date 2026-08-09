@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Vision - Puzzle Editor</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="editor.css" />
+  <title>The Vision - Puzzle Designer</title>
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="designer.css" />
 </head>
 <body>
-  <div class="editor-app">
-    <header class="editor-header">
-      <h1>Puzzle Editor</h1>
-      <a class="editor-back-link" href="index.html">&larr; Back to game</a>
+  <div class="designer-app">
+    <header class="designer-header">
+      <h1>Puzzle Designer</h1>
+      <a class="designer-back-link" href="../index.html">&larr; Back to game</a>
     </header>
 
-    <section class="editor-toolbar">
+    <section class="designer-toolbar">
       <label class="toolbar-field">
         <span>ID</span>
         <input id="puzzle-id" type="text" value="custom_level" />
@@ -48,8 +48,8 @@
       <ul id="warnings-list" class="warnings-list"></ul>
     </section>
 
-    <div class="editor-main">
-      <aside class="editor-palette">
+    <div class="designer-main">
+      <aside class="designer-palette">
         <div class="palette-groups">
           <div class="palette-group-block">
             <h2>Path Points</h2>
@@ -102,14 +102,14 @@
         <div id="tool-options" class="tool-options" hidden></div>
       </aside>
 
-      <div class="editor-board-column">
-        <div class="editor-board-toolbar">
+      <div class="designer-board-column">
+        <div class="designer-board-toolbar">
           <button id="playtest-toggle" type="button">Play Test</button>
           <button id="reset-path-btn" type="button" hidden>Reset Path</button>
-          <button id="sidebar-toggle-btn" type="button" class="sidebar-toggle-btn" aria-expanded="false" aria-controls="editor-sidebar">Panels</button>
+          <button id="sidebar-toggle-btn" type="button" class="sidebar-toggle-btn" aria-expanded="false" aria-controls="designer-sidebar">Panels</button>
           <span id="active-tool-label" class="active-tool-label"></span>
         </div>
-        <p id="editor-toast" class="editor-toast" aria-live="polite"></p>
+        <p id="designer-toast" class="designer-toast" aria-live="polite"></p>
         <div class="board-wrap">
           <svg id="board" class="board" viewBox="0 0 480 480">
             <g class="grid-lines"></g>
@@ -123,7 +123,7 @@
       </div>
 
       <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
-      <aside class="editor-sidebar" id="editor-sidebar">
+      <aside class="designer-sidebar" id="designer-sidebar">
         <section class="sidebar-panel">
           <h2>Export</h2>
           <textarea id="export-json" class="json-textarea" readonly rows="8"></textarea>
@@ -145,6 +145,6 @@
     </div>
   </div>
 
-  <script type="module" src="editor.js"></script>
+  <script type="module" src="designer.js"></script>
 </body>
 </html>

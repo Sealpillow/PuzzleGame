@@ -8,7 +8,7 @@ import { transformNode } from './Symmetry.js';
 // very long time (or effectively hang) enumerating dead-end paths that never reach an exit.
 //
 // Shared by the CLI verification tool (scripts/verify-level.mjs) and the browser-based
-// puzzle editor (editor.js) so both report identical solution counts for the same puzzle.
+// puzzle designer (designer/designer.js) so both report identical solution counts for the same puzzle.
 export function countSolutions(puzzle, cap = 1000, maxExpansions = 400000) {
   const grid = new Grid(puzzle.width, puzzle.height);
   let count = 0;

@@ -60,7 +60,7 @@ src/
     Regions.js       - shared flood-fill region computation (used by Colored Regions, Stars, Eliminators, Polyominoes)
     Eliminators.js   - the Eliminators mechanic (backtracking pairing search)
     Polyominoes.js   - the Polyominoes/Tetris mechanic (exact-cover tiling search)
-    SolutionCounter.js - brute-force solution counter, shared by scripts/verify-level.mjs and editor.js
+    SolutionCounter.js - brute-force solution counter, shared by scripts/verify-level.mjs and designer/designer.js
   puzzles/
     levels.json        - the standard 300-level collection, the only one the live game loads (generated via scripts/level-generator.mjs)
   save/
@@ -68,9 +68,10 @@ src/
 index.html
 style.css
 main.js              - app orchestration: level loading, sequential unlock gating, shared desktop/mobile nav layout mode, debug level jump/reveal/guide tools, and the mobile scope UI
-editor.html          - standalone puzzle editor page (not linked from the game)
-editor.js            - editor logic: symbol placement, live solve-count, playtest, JSON import/export
-editor.css           - editor-only layout; reuses style.css for board/symbol rendering
+designer/
+  designer.html        - standalone puzzle designer page (not linked from the game)
+  designer.js          - designer logic: symbol placement, live solve-count, playtest, JSON import/export
+  designer.css         - designer-only layout; reuses ../style.css for board/symbol rendering
 ```
 
 Every mechanic's validation lives as a plain exported function (not a class) across the `engine/*.js` files above - `passesAllDots`, `satisfiesTriangles`, `satisfiesRegions`, `satisfiesStars`, `includesRequiredEdges` (all in `Validator.js`), plus `satisfiesSymmetry`, `satisfiesEliminators`, and `satisfiesPolyominoes` in their own modules. Each returns a plain `true`/`false`; `validateSolution` ANDs every applicable one together.
@@ -265,23 +266,23 @@ Some of these are not built at all; others exist only as prototypes. All could w
 
 Desktop tracing, debug solution reveal, the debug symbol guide, and the mobile thumb-scope control are all live in the current build, including soft-follow camera movement, adjustable follow speed, left/right-hand placement, dismiss/reopen behavior, tap-to-rewind on visited nodes, and swipe capture that suppresses page scrolling while the scope is being dragged.
 
-The shared engine now covers the original core mechanics plus the newer node-direction family and region-size numbers, and levels 201-300 add a second win condition (multi-solution, see Mechanics above) on top of the original single-solution one. A standalone puzzle editor (`editor.html`/`editor.js`) is also live - see below. No audio, hint system, or daily puzzle yet - see Possible future additions above.
+The shared engine now covers the original core mechanics plus the newer node-direction family and region-size numbers, and levels 201-300 add a second win condition (multi-solution, see Mechanics above) on top of the original single-solution one. A standalone puzzle designer (`designer/designer.html`/`designer/designer.js`) is also live - see below. No audio, hint system, or daily puzzle yet - see Possible future additions above.
 
-## Puzzle Editor
+## Puzzle Designer
 
-`editor.html` is a standalone visual authoring tool for the puzzle JSON format described above - open it directly (`/editor.html`, same static server as the game) rather than through any in-game link. It's for building and testing levels by hand; it never touches `localStorage` save data and has no effect on the live game beyond producing/consuming the same JSON files.
+`designer/designer.html` is a standalone visual authoring tool for the puzzle JSON format described above - open it directly (`/designer/designer.html`, same static server as the game) rather than through any in-game link. It's for building and testing levels by hand; it never touches `localStorage` save data and has no effect on the live game beyond producing/consuming the same JSON files.
 
 **Toolbar** (top): puzzle metadata (`ID`, `Width`, `Height` + `Resize`), a `Load level` dropdown that pulls every level straight out of `levels.json`, and `New` to reset to a blank 4x4 board. The right side is the **solver cluster**, live on every edit:
 - A status line - `N solutions.`, `Unsolvable - 0 valid solutions.`, `Truncated - search budget hit...`, or `200+ solutions (capped).` - from a cheap, redundancy-check-only count (`SolutionCounter.js`), debounced 150ms after each edit.
-- `Limit` - how many distinct solutions `Show Solution` will search for/cycle through, 1-50 (typed values outside that range are clamped and the field corrects itself). This is editor-only state; it has no effect on the game's own debug "Show Sol." control, which keeps its own fixed cap of 3.
+- `Limit` - how many distinct solutions `Show Solution` will search for/cycle through, 1-50 (typed values outside that range are clamped and the field corrects itself). This is designer-only state; it has no effect on the game's own debug "Show Sol." control, which keeps its own fixed cap of 3.
 - `Show Solution` - finds and draws one valid path on the board; clicking again cycles to the next distinct one (`Sol. 2/5`, etc.), wrapping back to hidden after the last. If the loaded level already carries a `solutionPaths` field (see Puzzle data format above) and hasn't been edited since loading, it reads that instantly instead of searching live - editing anything (placing/erasing a symbol, moving Start, resizing) invalidates that shortcut and falls back to a live, budget-capped search.
 - A warnings line below (e.g. a triangle with count 4 but no eliminator anywhere, or `regionSizes` combined with `eliminators`) for common design mistakes the validator can't catch structurally.
 
 **Palette** (left): one icon button per mechanic, grouped under Path Points / Directional Nodes / Edges / Cell Symbols / Utility. Click a button to arm that tool, then click a node/edge/cell on the board to place or toggle it there; parameterized tools (triangle count, star/color, corner orientation, polyomino shape/rotation, region-size value) show their options directly below the palette while active. `Erase` removes whatever occupies the clicked node/edge/cell.
 
-**Board** (center): click to place with the active tool. `Play Test` switches the board into the same tracing input the real game uses, so you can draw and submit a path exactly as a player would and see pass/fail feedback (including which symbols failed) without leaving the editor.
+**Board** (center): click to place with the active tool. `Play Test` switches the board into the same tracing input the real game uses, so you can draw and submit a path exactly as a player would and see pass/fail feedback (including which symbols failed) without leaving the designer.
 
-**Export / Import** (right, behind a `Panels` toggle on narrow windows): `Export` shows the puzzle's current JSON live and can copy it to the clipboard or download it as a file; `Import` accepts a pasted puzzle JSON object and loads it into the editor, replacing whatever's currently open.
+**Export / Import** (right, behind a `Panels` toggle on narrow windows): `Export` shows the puzzle's current JSON live and can copy it to the clipboard or download it as a file; `Import` accepts a pasted puzzle JSON object and loads it into the designer, replacing whatever's currently open.
 
 On narrow/mobile widths the whole layout compacts into one screen with no page scrolling: the tool palette becomes a horizontally-scrollable strip, and Export/Import move into a slide-in drawer opened via the `Panels` button (the solver cluster stays in the toolbar at every width).
 

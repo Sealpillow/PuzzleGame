@@ -1,11 +1,11 @@
-import { Grid } from './src/engine/Grid.js';
-import { Renderer } from './src/engine/Renderer.js';
-import { InputController } from './src/engine/Input.js';
-import { analyzeSolution } from './src/engine/Validator.js';
-import { countSolutions } from './src/engine/SolutionCounter.js';
-import { findSolutionPaths } from './src/engine/Solver.js';
-import { POLYOMINO_SHAPES } from './src/engine/Polyominoes.js';
-import { loadPuzzles } from './src/engine/PuzzleLoader.js';
+import { Grid } from '../src/engine/Grid.js';
+import { Renderer } from '../src/engine/Renderer.js';
+import { InputController } from '../src/engine/Input.js';
+import { analyzeSolution } from '../src/engine/Validator.js';
+import { countSolutions } from '../src/engine/SolutionCounter.js';
+import { findSolutionPaths } from '../src/engine/Solver.js';
+import { POLYOMINO_SHAPES } from '../src/engine/Polyominoes.js';
+import { loadPuzzles } from '../src/engine/PuzzleLoader.js';
 
 const COLORS = ['black', 'white', 'blue'];
 const CORNER_ORIENTATIONS = ['ur', 'ul', 'dr', 'dl'];
@@ -72,7 +72,7 @@ const newPuzzleBtn = document.getElementById('new-puzzle-btn');
 const paletteButtons = [...document.querySelectorAll('.palette-btn')];
 const toolOptionsEl = document.getElementById('tool-options');
 const activeToolLabel = document.getElementById('active-tool-label');
-const editorToastEl = document.getElementById('editor-toast');
+const designerToastEl = document.getElementById('designer-toast');
 const playtestToggleBtn = document.getElementById('playtest-toggle');
 const resetPathBtn = document.getElementById('reset-path-btn');
 const playtestStatusEl = document.getElementById('playtest-status');
@@ -88,7 +88,7 @@ const loadJsonBtn = document.getElementById('load-json-btn');
 const importErrorEl = document.getElementById('import-error');
 const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
 const sidebarBackdrop = document.getElementById('sidebar-backdrop');
-const editorSidebarEl = document.getElementById('editor-sidebar');
+const designerSidebarEl = document.getElementById('designer-sidebar');
 
 function defaultPuzzle() {
   return {
@@ -207,10 +207,10 @@ function nearestCell(point) {
 }
 
 function showToast(message) {
-  editorToastEl.textContent = message;
+  designerToastEl.textContent = message;
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
-    editorToastEl.textContent = '';
+    designerToastEl.textContent = '';
   }, TOAST_MS);
 }
 
@@ -523,7 +523,7 @@ function getShownSolutionCap() {
 // scripts/level-generator.mjs) - reading that field means a freshly loaded level shows a solution
 // instantly and reliably, even on the dense 101+ boards where a live budget-capped DFS can fail
 // outright (see src/engine/Solver.js's sortTowardExits comment). Only trusted while the puzzle
-// hasn't been edited since load - any editor mutation flips puzzleDirty and forces a live search.
+// hasn't been edited since load - any designer mutation flips puzzleDirty and forces a live search.
 function collectShownSolutions() {
   const cap = getShownSolutionCap();
   if (!puzzleDirty && puzzle.solutionPaths && puzzle.solutionPaths.length) {
@@ -791,7 +791,7 @@ function setActiveTool(tool) {
   renderToolOptions();
 }
 
-function loadPuzzleIntoEditor(data) {
+function loadPuzzleIntoDesigner(data) {
   stopPlaytest();
   puzzleDirty = false;
   puzzle = structuredClone(data);
@@ -809,10 +809,10 @@ function loadPuzzleIntoEditor(data) {
 
 async function loadExistingLevelOptions() {
   try {
-    const standard = await loadPuzzles('./src/puzzles/levels.json');
+    const standard = await loadPuzzles('../src/puzzles/levels.json');
     populateLoadGroup('Levels', standard);
   } catch (err) {
-    console.error('Failed to load existing levels for the editor picker:', err);
+    console.error('Failed to load existing levels for the designer picker:', err);
   }
 }
 
@@ -854,14 +854,14 @@ idInput.addEventListener('input', () => {
 });
 
 newPuzzleBtn.addEventListener('click', () => {
-  loadPuzzleIntoEditor(defaultPuzzle());
+  loadPuzzleIntoDesigner(defaultPuzzle());
 });
 
 loadExistingSelect.addEventListener('change', () => {
   const key = loadExistingSelect.value;
   if (!key) return;
   const level = existingLevelsById.get(key);
-  if (level) loadPuzzleIntoEditor(level);
+  if (level) loadPuzzleIntoDesigner(level);
   loadExistingSelect.value = '';
 });
 
@@ -878,19 +878,19 @@ solutionLimitInput.addEventListener('change', () => {
 });
 
 function openSidebarDrawer() {
-  editorSidebarEl.classList.add('open');
+  designerSidebarEl.classList.add('open');
   sidebarBackdrop.hidden = false;
   sidebarToggleBtn.setAttribute('aria-expanded', 'true');
 }
 
 function closeSidebarDrawer() {
-  editorSidebarEl.classList.remove('open');
+  designerSidebarEl.classList.remove('open');
   sidebarBackdrop.hidden = true;
   sidebarToggleBtn.setAttribute('aria-expanded', 'false');
 }
 
 sidebarToggleBtn.addEventListener('click', () => {
-  if (editorSidebarEl.classList.contains('open')) closeSidebarDrawer();
+  if (designerSidebarEl.classList.contains('open')) closeSidebarDrawer();
   else openSidebarDrawer();
 });
 
@@ -927,7 +927,7 @@ downloadJsonBtn.addEventListener('click', () => {
 loadJsonBtn.addEventListener('click', () => {
   try {
     const parsed = JSON.parse(importJsonEl.value);
-    loadPuzzleIntoEditor(parsed);
+    loadPuzzleIntoDesigner(parsed);
     importErrorEl.textContent = '';
   } catch (err) {
     importErrorEl.textContent = `Invalid JSON: ${err.message}`;

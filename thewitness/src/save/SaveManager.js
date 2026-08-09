@@ -86,7 +86,7 @@ function applyMigrations(save) {
   }
 
   // The "codex" collection was removed outright (codex-levels.json deleted, no longer loadable
-  // anywhere, including the editor) rather than renamed or promoted - purge its now-meaningless
+  // anywhere, including the designer) rather than renamed or promoted - purge its now-meaningless
   // progress instead of letting it accumulate forever as dead data, mirroring how the old
   // "chatgpt" collection's progress was reset above when it was cut over to "codex".
   if (!next.migrations[CODEX_COLLECTION_REMOVED_KEY]) {
