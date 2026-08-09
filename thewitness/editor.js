@@ -16,7 +16,8 @@ const EDGE_FIELDS = ['blockedEdges', 'requiredEdges'];
 const NODE_LIST_FIELDS = ['dots', 'exits', ...DIRECTIONAL_FIELDS];
 const SOLVER_CAP = 200;
 const SOLVER_MAX_EXPANSIONS = 300000;
-const SHOWN_SOLUTION_CAP = 3;
+const SHOWN_SOLUTION_CAP_DEFAULT = 20;
+const SHOWN_SOLUTION_CAP_MAX = 50;
 const SOLVE_DEBOUNCE_MS = 150;
 const FAIL_FLASH_MS = 1400;
 const TOAST_MS = 1800;
@@ -77,6 +78,7 @@ const resetPathBtn = document.getElementById('reset-path-btn');
 const playtestStatusEl = document.getElementById('playtest-status');
 const solverStatusEl = document.getElementById('solver-status');
 const showSolutionBtn = document.getElementById('show-solution-btn');
+const solutionLimitInput = document.getElementById('solution-limit');
 const warningsListEl = document.getElementById('warnings-list');
 const exportJsonEl = document.getElementById('export-json');
 const copyJsonBtn = document.getElementById('copy-json-btn');
@@ -496,14 +498,25 @@ function sameSolutionPath(a, b) {
   return a.length === b.length && a.every(([col, row], i) => col === b[i][0] && row === b[i][1]);
 }
 
-function dedupeSolutions(paths) {
+function dedupeSolutions(paths, cap) {
   const solutions = [];
   for (const path of paths) {
-    if (solutions.length >= SHOWN_SOLUTION_CAP) break;
+    if (solutions.length >= cap) break;
     if (solutions.some((existing) => sameSolutionPath(existing, path))) continue;
     solutions.push(path);
   }
   return solutions;
+}
+
+// User-adjustable, but clamped to SHOWN_SOLUTION_CAP_MAX - an open/lightly-constrained board can
+// have a combinatorially huge number of valid paths (see countSolutions' own "200+ (capped)"
+// message), so an unbounded search here could hang the tab. Clamping (rather than rejecting) and
+// writing the corrected value back means a stray typed value never silently gets ignored.
+function getShownSolutionCap() {
+  const parsed = parseInt(solutionLimitInput.value, 10);
+  const cap = clampInt(parsed, 1, SHOWN_SOLUTION_CAP_MAX);
+  solutionLimitInput.value = String(cap);
+  return cap;
 }
 
 // Generator-produced levels carry their own already-computed solutionPaths (see
@@ -512,10 +525,11 @@ function dedupeSolutions(paths) {
 // outright (see src/engine/Solver.js's sortTowardExits comment). Only trusted while the puzzle
 // hasn't been edited since load - any editor mutation flips puzzleDirty and forces a live search.
 function collectShownSolutions() {
+  const cap = getShownSolutionCap();
   if (!puzzleDirty && puzzle.solutionPaths && puzzle.solutionPaths.length) {
-    return dedupeSolutions(puzzle.solutionPaths);
+    return dedupeSolutions(puzzle.solutionPaths, cap);
   }
-  return dedupeSolutions(findSolutionPaths(puzzle, SHOWN_SOLUTION_CAP, SOLVER_MAX_EXPANSIONS));
+  return dedupeSolutions(findSolutionPaths(puzzle, cap, SOLVER_MAX_EXPANSIONS), cap);
 }
 
 function hideSolution() {
@@ -858,6 +872,11 @@ playtestToggleBtn.addEventListener('click', () => {
 
 showSolutionBtn.addEventListener('click', toggleSolution);
 
+solutionLimitInput.addEventListener('change', () => {
+  getShownSolutionCap();
+  hideSolution();
+});
+
 function openSidebarDrawer() {
   editorSidebarEl.classList.add('open');
   sidebarBackdrop.hidden = false;
@@ -914,6 +933,9 @@ loadJsonBtn.addEventListener('click', () => {
     importErrorEl.textContent = `Invalid JSON: ${err.message}`;
   }
 });
+
+solutionLimitInput.max = String(SHOWN_SOLUTION_CAP_MAX);
+solutionLimitInput.value = String(SHOWN_SOLUTION_CAP_DEFAULT);
 
 setActiveTool('start');
 afterEdit();
