@@ -67,7 +67,7 @@ src/
     SaveManager.js   - localStorage read/write
 index.html
 style.css
-main.js              - app orchestration: level loading, sequential unlock gating, shared desktop/mobile nav layout mode, debug level jump/reveal/guide tools, and the mobile scope UI
+main.js              - app orchestration: level loading, sequential unlock gating, popup-driven custom-puzzle generation, shared desktop/mobile nav layout mode, debug level jump/reveal/guide tools, and the mobile scope UI
 designer/
   designer.html        - standalone puzzle designer page (not linked from the game)
   designer.js          - designer logic: symbol placement, live solve-count, playtest, JSON import/export
@@ -92,7 +92,7 @@ Every puzzle collection lives in `src/puzzles/*.json`, one flat array per collec
 }
 ```
 
-The full set of possible fields: `dots`, `blockedEdges`, `requiredEdges`, `triangles`, `cellColors`, `stars`, `eliminators`, `polyominoes`, `regionSizes`, and a `symmetry` string (currently only `"rotational"`, and currently unused in the shipped collection - see Mechanics below). A polyomino entry is `[col, row, shapeName, rotationSteps, rotatable]`; a region-size entry is `[col, row, value]` - see the notes below. Two more fields are generator/gameplay bookkeeping rather than mechanics themselves: `solutionPaths` (an array of pre-computed valid paths, so the debug "Show Solution" control never has to search live) and `requiredSolutions` (1-3, levels 201-300 only - see Mechanics > Multi-solution win condition below).
+The full set of possible fields: `dots`, `blockedEdges`, `requiredEdges`, `triangles`, `cellColors`, `stars`, `eliminators`, `polyominoes`, `regionSizes`, and a `symmetry` string (currently only `"rotational"`). In practice, `symmetry` is engine-supported but inactive in the shipped collection and outside the current level-creation ruleset - see Mechanics below and `level-creation-rulebook.md` Section 8. A polyomino entry is `[col, row, shapeName, rotationSteps, rotatable]`; a region-size entry is `[col, row, value]` - see the notes below. Two more fields are generator/gameplay bookkeeping rather than mechanics themselves: `solutionPaths` (an array of pre-computed valid paths, so the debug "Show Solution" control never has to search live) and `requiredSolutions` (1-3, levels 201-300 only - see Mechanics > Multi-solution win condition below).
 
 ## Engine internals
 
@@ -151,7 +151,7 @@ The shared engine currently supports these rule types across the shipped collect
 - **Region Size Numbers** - each numbered cell adds that many cells to its region's required total. If multiple numbers appear in the same region, add them together; that region must contain exactly that many cells in any shape. Current authoring preference is to keep individual values compact, usually `2-5`, and express larger totals through multiple numbers rather than a single big value.
 
 **Global** (a puzzle-wide flag, no position of its own):
-- **Symmetry** - a second, mirrored path is drawn automatically alongside yours; both must be valid and the two must never touch. On a Symmetry level, your drawn path may start from either visible start point and may finish on either a listed exit or that exit's mirrored counterpart. The mirror path's nodes/edges also count toward dots/required/triangles/regions, so Symmetry can combine with the other mechanics rather than staying standalone. The engine fully supports this, but no level in the shipped `levels.json` currently uses it - see `level-creation-rulebook.md` Section 8 for why.
+- **Symmetry** - a second, mirrored path is drawn automatically alongside yours; both must be valid and the two must never touch. On a Symmetry level, your drawn path may start from either visible start point and may finish on either a listed exit or that exit's mirrored counterpart. The mirror path's nodes/edges also count toward dots/required/triangles/regions, so Symmetry can combine with the other mechanics rather than staying standalone. The engine fully supports this, but it is inactive in the shipped `levels.json` and should be treated as legacy-supported rather than part of the current live ruleset - see `level-creation-rulebook.md` Section 8 for why.
 
 Most puzzles have a single exit, but a level can define more than one - either ending is a valid solution, so the player may need to plan for more than one possible finish.
 
@@ -233,6 +233,8 @@ This part is not obvious from playing the game, so it is stated explicitly here:
 New mechanics also get unit-tested against hand-built synthetic puzzles (edge cases like "no valid target to cancel" or "piece only fits with a 180-degree rotation") before any real level uses them, and every engine change gets a full regression pass - every existing level re-verified, plus a simulated end-to-end playthrough checking unlock gating, solvability, and that no mechanic name ever leaks into the UI - before new content is added.
 
 The full reasoning standard, including what the generator is supposed to optimize for, the step-by-step design loop, exact per-tier numeric targets, constraint-design principles, and hard rules, lives in `level-creation-rulebook.md`. That file should be treated as the authoritative design document.
+
+**Custom generator note:** the in-app `Custom` generator intentionally exposes only the 6 core **cell mechanics** as user-selectable preferences: `Triangles`, `Colored Regions`, `Stars`, `Eliminators`, `Polyominoes`, and `Region Size Numbers`. Support mechanics - `Dots`, `Blocked Edges`, `Required Edges`, and the directional-node family - remain generator-chosen behind the scenes. The UI promise is "choose the main logic family"; the generator still decides how to support and structure that puzzle.
 
 ### Current collection
 

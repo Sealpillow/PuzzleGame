@@ -1121,7 +1121,7 @@ export function buildFlexibleRecipes() {
   return recipes;
 }
 
-function attemptFlexibleLevel(levelNumber, recipe, maxAttempts, debug = false) {
+function attemptFlexibleLevel(levelNumber, recipe, maxAttempts, debug = false, onProgress = null, progressBase = 0, progressSpan = 1, stage = 'primary') {
   const reasons = new Map();
   const fail = (reason) => {
     if (debug) reasons.set(reason, (reasons.get(reason) || 0) + 1);
@@ -1129,6 +1129,14 @@ function attemptFlexibleLevel(levelNumber, recipe, maxAttempts, debug = false) {
   };
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (onProgress && (attempt === 0 || attempt === maxAttempts - 1 || attempt % 20 === 0)) {
+      onProgress({
+        stage,
+        attempt: attempt + 1,
+        maxAttempts,
+        progress: progressBase + ((attempt + 1) / maxAttempts) * progressSpan,
+      });
+    }
     const [width, height] = choice(recipe.sizes);
     let start = randomBorderNode(width, height);
     let exit = randomBorderNode(width, height);
@@ -1289,6 +1297,14 @@ function attemptFlexibleLevel(levelNumber, recipe, maxAttempts, debug = false) {
     // See generateIntroLevel's identical comment - stored so "Show Sol." can display and cycle
     // through solutions instantly, with zero search of its own at view time.
     puzzle.solutionPaths = collectStoredSolutions(puzzle, path);
+    if (onProgress) {
+      onProgress({
+        stage,
+        attempt: attempt + 1,
+        maxAttempts,
+        progress: progressBase + progressSpan,
+      });
+    }
     return puzzle;
   }
   if (debug) {
@@ -1310,11 +1326,12 @@ const MAX_BOARD_DIMENSION = 7;
 // and with a denser mechanic pool, its recipes fail their first attempt often enough for that to
 // matter in aggregate (confirmed empirically - escalating past 6x6 made individual attempts take
 // tens of seconds instead of milliseconds).
-function generateFlexibleLevel(levelNumber, recipe, maxAttempts, debug = false, maxBoardDimension = MAX_BOARD_DIMENSION) {
-  const found = attemptFlexibleLevel(levelNumber, recipe, maxAttempts, debug);
+function generateFlexibleLevel(levelNumber, recipe, maxAttempts, debug = false, maxBoardDimension = MAX_BOARD_DIMENSION, onProgress = null) {
+  const canGrow = recipe.sizes.some(([w, h]) => w < maxBoardDimension && h < maxBoardDimension);
+  const primarySpan = canGrow ? 0.5 : 1;
+  const found = attemptFlexibleLevel(levelNumber, recipe, maxAttempts, debug, onProgress, 0, primarySpan, 'primary');
   if (found) return found;
 
-  const canGrow = recipe.sizes.some(([w, h]) => w < maxBoardDimension && h < maxBoardDimension);
   if (!canGrow) return null;
 
   const escalated = {
@@ -1324,7 +1341,7 @@ function generateFlexibleLevel(levelNumber, recipe, maxAttempts, debug = false, 
       Math.min(h + 1, maxBoardDimension),
     ]),
   };
-  return attemptFlexibleLevel(levelNumber, escalated, maxAttempts, debug);
+  return attemptFlexibleLevel(levelNumber, escalated, maxAttempts, debug, onProgress, 0.5, 0.5, 'expanded');
 }
 
 // ---------------------------------------------------------------------------
@@ -1445,7 +1462,8 @@ const MULTI_SOLUTION_BANDS = [
 // not skip-and-discard) - this is load-bearing, not a style choice: a tier before any node lesson
 // has run must consume EXACTLY as many rng() calls as the original 8-mechanic-only design did, or
 // its levels stop matching what a from-scratch regen with nothing after it would produce.
-function buildOneComboRecipe(band, cellPool, directionalPool) {
+function buildOneComboRecipe(band, cellPool, directionalPool, preferredTypes = []) {
+  const selected = new Set((preferredTypes || []).filter(Boolean));
   // Same polyominoes exclusivity throughout: it claims a whole region outright, so it can only
   // ever share a level with triangles (which doesn't compete for cells at all). One further
   // exclusion once regionSizes is unlocked: it can never share a level with eliminators (the
@@ -1456,6 +1474,12 @@ function buildOneComboRecipe(band, cellPool, directionalPool) {
     ? cellPool.filter((m) => m !== 'polyominoes')
     : cellPool;
   let cellMechanics = shuffle(pool).slice(0, band.distinctCell);
+  const selectedCellTypes = [...selected].filter((type) => CELL_MECHANICS.includes(type));
+  for (const selectedType of selectedCellTypes) {
+    if (cellMechanics.includes(selectedType)) continue;
+    if (cellMechanics.length >= band.distinctCell) cellMechanics[cellMechanics.length - 1] = selectedType;
+    else cellMechanics.push(selectedType);
+  }
   if (cellMechanics.includes('polyominoes')) {
     cellMechanics = cellMechanics.filter((m) => m === 'polyominoes' || m === 'triangles');
     if (!cellMechanics.includes('triangles') && cellMechanics.length < band.distinctCell) {
@@ -1486,16 +1510,17 @@ function buildOneComboRecipe(band, cellPool, directionalPool) {
     instanceCounts[colorsIdx] = Math.max(2, instanceCounts[colorsIdx]);
   }
 
-  const wantDirectionalNode = directionalPool.length > 0 && rng() < band.dnChance;
+  const wantsPreferredDirectional = selected.has('directionalNodes');
+  const wantDirectionalNode = directionalPool.length > 0 && (wantsPreferredDirectional || rng() < band.dnChance);
   return {
     band: band.name,
     sizes: band.sizes,
     minEdges: band.minEdges,
     cellMechanics,
     instanceCounts,
-    wantCut: rng() < band.cutChance,
-    wantRequiredEdges: rng() < band.reqChance,
-    wantDots: rng() < band.dotsChance,
+    wantCut: selected.has('blockedEdges') ? true : rng() < band.cutChance,
+    wantRequiredEdges: selected.has('requiredEdges') ? true : rng() < band.reqChance,
+    wantDots: selected.has('dots') ? true : rng() < band.dotsChance,
     wantDirectionalNode,
     directionalNodeMechanic: wantDirectionalNode ? choice(directionalPool) : null,
   };
@@ -1645,6 +1670,50 @@ export function generateAll({ maxAttemptsIntro = 600, maxAttemptsFlexible = 4000
   runComboTier('multi-solution', MULTI_SOLUTION_BANDS, EXPANDED_CELL_MECHANICS, DIRECTIONAL_NODE_MECHANICS, 6, finalizeMultiSolutionLevel);
 
   return levels;
+}
+
+const CUSTOM_PROFILES = {
+  easy: [FLEXIBLE_BANDS[2], FLEXIBLE_BANDS[3], FLEXIBLE_BANDS[4]],
+  medium: [FLEXIBLE_BANDS[5], FLEXIBLE_BANDS[6], FLEXIBLE_BANDS[7]],
+  hard: [FLEXIBLE_BANDS[8], FLEXIBLE_BANDS[9], EXPANDED_BANDS[0], EXPANDED_BANDS[1], EXPANDED_BANDS[2]],
+  expert: [EXPANDED_BANDS[3], EXPANDED_BANDS[4], EXPANDED_BANDS[5], EXPANDED_BANDS[6], EXPANDED_BANDS[7], EXPANDED_BANDS[8], EXPANDED_BANDS[9]],
+};
+
+export function generateCustomLevel({ profile = 'medium', preferredTypes = [], maxAttempts = 4000, maxBoardDimension = 6, onProgress = null } = {}) {
+  const pool = CUSTOM_PROFILES[profile] || CUSTOM_PROFILES.medium;
+  const band = choice(pool);
+  const recipe = buildOneComboRecipe(band, EXPANDED_CELL_MECHANICS, DIRECTIONAL_NODE_MECHANICS, preferredTypes);
+  if (onProgress) {
+    onProgress({
+      stage: 'setup',
+      attempt: 0,
+      maxAttempts,
+      progress: 0.02,
+      band: recipe.band,
+      profile,
+      preferredTypes,
+    });
+  }
+  const level = generateFlexibleLevel(1, recipe, maxAttempts, false, maxBoardDimension, (payload) => {
+    onProgress?.({
+      ...payload,
+      band: recipe.band,
+      profile,
+      preferredTypes,
+    });
+  });
+  if (!level) {
+    throw new Error(`Failed to generate a custom puzzle (${profile}:${recipe.band})`);
+  }
+  return {
+    ...level,
+    id: `custom_${Date.now()}`,
+    isCustomPuzzle: true,
+    customProfile: profile,
+    preferredTypes,
+    progressKey: '',
+    requiredSolutions: 1,
+  };
 }
 
 // Exposed for isolated debugging of a single troublesome recipe without re-running everything

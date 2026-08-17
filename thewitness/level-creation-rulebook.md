@@ -10,6 +10,8 @@ Every puzzle needs `id`, `width`, `height`, `start` (a node `[col,row]`), and `e
 
 ### 1.1 Mechanics grouped by target
 
+**Current scope note:** Symmetry remains engine-supported and is documented here for completeness, but it is **not part of the active 300-level collection or the current level-creation ruleset**. When this document discusses the live collection's pacing, mechanic selection, support/primary roles, or difficulty scaling, read that as applying to the active Node / Edge / Cell mechanics unless a section explicitly says otherwise.
+
 Every mechanic targets exactly one of four things, and that target is what actually drives its data shape and its conflict rules, not just a naming convention:
 
 - **Node** - a single grid intersection `[col,row]`. A node may carry at most one of Turn / Straight / Horizontal / Vertical / Corner at a time - they are mutually exclusive, since each fully describes how the path must behave at that point. Dots don't compete with anything and may sit on a node alongside a directional constraint.
@@ -22,7 +24,7 @@ Every mechanic targets exactly one of four things, and that target is what actua
 | Node | Dots, Turn Nodes, Straight Nodes, Horizontal Nodes, Vertical Nodes, Corner Nodes |
 | Edge | Blocked Edges, Required Edges |
 | Cell | Triangles, Colored Regions, Stars, Eliminators, Polyominoes, Region Size Numbers |
-| Global | Symmetry |
+| Global | Symmetry *(engine-supported, inactive in the live collection)* |
 
 ### 1.2 Challenge weight, pairing, and decorative risk
 
@@ -37,7 +39,7 @@ This is drawn from actually building and debugging the procedural standard-colle
 - **Moderate, cell-local:** Triangles. Cheap to place (any cell with 1-3 traveled edges qualifies) and genuinely constraining on its own, but easy to reduce to filler - see "free-adjacent-triangle" below.
 - **Strong, board-wide:** Colored Regions, Stars, Region Size Numbers. These reason about an entire region's membership or size, not a single point, so they narrow the route far more globally than any node/edge mark can.
 - **Strong and deep, but fragile to construct:** Eliminators (a real backtracking ambiguity - the puzzle doesn't say which symbol gets cancelled) and Polyominoes (needs a region that's an *exact* shape/size match for a canonical piece - empirically the rarest thing to occur naturally, and the slowest for a generator to satisfy).
-- **Multiplier, not a tier of its own:** Symmetry doubles the effective constraint surface, since every other active mechanic's requirement now has to hold for the mirrored path too. It amplifies whatever it's paired with - for real depth if paired with something simple, or into near-unsatisfiable territory if paired with something already tight (see below).
+- **Inactive / legacy-supported multiplier:** Symmetry doubles the effective constraint surface, since every other active mechanic's requirement now has to hold for the mirrored path too. It amplifies whatever it's paired with - for real depth if paired with something simple, or into near-unsatisfiable territory if paired with something already tight (see below). It is documented because the engine still supports it, not because it belongs to the current shipped ruleset.
 
 **Pairs well:**
 
@@ -77,7 +79,7 @@ This is drawn from actually building and debugging the procedural standard-colle
 | Vertical Nodes | Node | If the path visits that node, it must pass straight top-to-bottom through it. It may land on the node, but may not continue horizontally through it. | `verticalNodes: [[col,row], ...]` | pale vertical bar marker on the grid node |
 | Corner Nodes | Node | If the path visits that node, it must form one specific L-shaped turn orientation there. Supported orientations are `ur`, `ul`, `dr`, and `dl`. | `cornerNodes: [[col,row,orientation], ...]` | blue corner marker on the grid node |
 | Region Size Numbers | Cell | A numbered cell contributes that many cells to its region's required total. If multiple numbers share a region, add them together; the region containing them must have exactly that many cells in any shape. Prefer compact values, usually `2-5`, and build larger totals by summing multiple numbers in the same region. | `regionSizes: [[col,row,value], ...]` | ivory number centered in the cell |
-| Symmetry | Global | A second path, the 180-degree rotation of the drawn one about grid center, is derived automatically; both must be valid and must never share a node. The drawn path may start from either visible start point and may finish on either a listed exit or that exit's mirrored counterpart. Its nodes/edges also count toward Dots/Required/Triangles/Regions, so it combines with other mechanics instead of staying standalone. | `symmetry: "rotational"` (only value currently supported) | dimmed mirror start/exit markers + a distinctly colored mirror path line |
+| Symmetry *(inactive in the live collection)* | Global | A second path, the 180-degree rotation of the drawn one about grid center, is derived automatically; both must be valid and must never share a node. The drawn path may start from either visible start point and may finish on either a listed exit or that exit's mirrored counterpart. Its nodes/edges also count toward Dots/Required/Triangles/Regions, so it combines with other mechanics instead of staying standalone. | `symmetry: "rotational"` (only value currently supported) | dimmed mirror start/exit markers + a distinctly colored mirror path line |
 
 Current caveat:
 
@@ -88,6 +90,8 @@ Current caveat:
 
 ## 2. Mechanic introduction order
 
+For the **active live collection**, the introduction order is:
+
 Dots -> Blocked Edges -> Required Edges -> Triangles -> Colored Regions -> Stars -> Eliminators -> Polyominoes.
 
 A later continuation adds: Turn Nodes + Straight Nodes together, then Horizontal Nodes + Vertical Nodes + Corner Nodes together, then Region Size Numbers on its own - a two-tier combined lesson for each of those 3 groups. As of the 2026-08-08 interleaved-schedule restructure these 3 lessons are no longer clustered right after level 100 - they're spread across the run as lessons A/B/C at levels 41-42/70-71/99-101, each immediately followed by a stretch of combo levels that folds the newly-taught mechanic(s) into ordinary density-drilling content rather than leaving them isolated (see Section 9.1). Mixed late-game combinations using these mechanics together with earlier ones are exactly what the post-lesson combo tiers now do, all the way to level 200.
@@ -96,7 +100,7 @@ Rationale, for when a new mechanic needs to be slotted in:
 - The three simple point/edge rules (Dots, Blocked Edges, Required Edges) come first - they constrain the path directly, with no indirection.
 - Triangles (reasoning about one cell), then Colored Regions (reasoning about the whole board), then Stars (a stricter regions variant), then Eliminators and Polyominoes last, since both depend on the player already understanding what a region is.
 
-**Symmetry is intentionally absent from this order** - see Section 8 for the full reasoning (built, tested, then deliberately removed from the generator). If it's ever added to a real order again, the original design intent was for it to sit right after Required Edges, before Triangles, as an early "paradigm-shift breather" (mirroring how the actual Witness introduces it early rather than saving it as a capstone) - not as a late addition.
+**Symmetry is intentionally absent from the active order** - see Section 8 for the full reasoning (built, tested, then deliberately removed from the generator). If it's ever added to a real order again, the original design intent was for it to sit right after Required Edges, before Triangles, as an early "paradigm-shift breather" (mirroring how the actual Witness introduces it early rather than saving it as a capstone) - not as a late addition.
 
 ---
 
@@ -158,6 +162,7 @@ There is only one collection: `src/puzzles/levels.json`, the only one the live g
 The campaign table further down organizes a collection around a *tiered floor* system: a fixed minimum mechanic-type count per band, tightening toward a specific solution-count target as the collection progresses. The current standard collection instead uses a *flexible, density-driven* design, developed and debugged in `scripts/level-generator.mjs`. Both are legitimate; pick based on what the level (or collection) is trying to do:
 
 - **No fixed mechanic-type floor.** Dots/Blocked Edges/Required Edges are each independently *optional* per level, not mandatory. The cell-based mechanics (Triangles, Colored Regions, Stars, Eliminators, Polyominoes) are the deductive backbone and are the ones worth repeating instead - packing several instances of just 1-2 of them into a level is a legitimate way to raise difficulty without needing more distinct types.
+- **Primary vs. support mechanics should stay legible.** In the current ruleset, the user-facing "main mechanic" identity of a level should come from the cell-based mechanics: `Triangles`, `Colored Regions`, `Stars`, `Eliminators`, `Polyominoes`, and `Region Size Numbers`. Dots, Blocked Edges, Required Edges, and the directional-node family are still real mechanics, but they are usually better treated as support structure that sharpens or frames the main logic rather than as the headline identity of the puzzle.
 - **No per-level solution-count target.** A level only needs to be genuinely solvable (the intended path is a real, verifiable solution) and pass a redundancy audit (strip each active mechanic and re-count; if the count doesn't change, that mechanic is decorative and shouldn't be there) - there's no narrow count window to hit. This trades some of the tiered system's precise difficulty-curve control for much faster, more reliable authoring/generation: chasing an exact count window was consistently the dominant source of wasted attempts when this collection was built (minutes-long stalls, occasional outright failures) - removing it fixed that directly. If a specific level genuinely needs a tight, verified solution count (e.g. a grand-finale level), apply that explicit count-checking to that level specifically rather than the whole collection.
 - **Density and mechanic-type count are independent difficulty levers, and density is often the cheaper/cleaner one to push.** Growing a level's difficulty doesn't require adding more distinct mechanic types - more instances of the 1-2 already-active mechanics usually gets there with a more compact board and less structural risk. Reserve adding a 3rd+ distinct mechanic type for when the level's specific idea actually needs it, not as the default difficulty dial.
 - **When mixing 3+ distinct cell mechanics in one level, watch region capacity.** Polyominoes claims an entire region outright (every cell, exact shape match) - pairing it with any region-color-sensitive mechanic (Colored Regions/Stars/Eliminators, which each only partially claim cells from the same limited region pool) means whichever one gets placed second can no longer find a wholly-free region to use. In practice, keep Polyominoes paired with Triangles only, and treat 3 simultaneous distinct cell-mechanic types as a practical ceiling before generation/authoring reliability drops off sharply (empirically, 4-5 simultaneous types meant demanding nearly every mechanic compete for the same handful of regions, causing multi-minute stalls even after every other fix here).
@@ -208,6 +213,8 @@ The generator is not supposed to "make a valid puzzle somehow." Its job is to pr
 6. **Preserve mechanic dignity.** Directional nodes should do their own work, support mechanics should create real tradeoffs, and cell-based mechanics should not overlap.
 7. **Maintain collection shape.** Difficulty should climb, soft late outliers should be replaced or moved, and board structures should stay varied across a band.
 8. **Submit every board to verification.** Generation is only the proposal stage; solve-count, redundancy, branching, and compatibility checks decide whether the board is acceptable.
+
+For the in-app custom generator specifically, this philosophy is reflected directly in the picker: users choose only among the core cell mechanics, while support mechanics remain automatic and are added only when they improve structure, pacing, or deduction quality.
 
 In short: the generator should encode design intent, not merely output legal data.
 

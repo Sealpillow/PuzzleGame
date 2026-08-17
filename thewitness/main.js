@@ -51,10 +51,23 @@ const pagerPrev = document.getElementById('pager-prev');
 const pagerNext = document.getElementById('pager-next');
 const pagerLabel = document.getElementById('pager-label');
 const resetBtn = document.getElementById('reset-btn');
+const customBtn = document.getElementById('custom-btn');
 const guideBtn = document.getElementById('guide-btn');
 const solutionBtn = document.getElementById('solution-btn');
 const nextBtn = document.getElementById('next-btn');
 const statusEl = document.getElementById('status');
+const customPickerEl = document.getElementById('custom-picker');
+const customPickerBackdropEl = customPickerEl?.querySelector('.custom-picker-backdrop');
+const customPickerCloseBtn = document.getElementById('custom-picker-close');
+const customOptionBtns = [...document.querySelectorAll('.custom-option-btn')];
+const customPickerOptionsEl = customPickerEl?.querySelector('.custom-picker-options');
+const customModeBtns = [...document.querySelectorAll('.custom-mode-btn')];
+const customMechanicsFieldEl = document.getElementById('custom-mechanics-field');
+const customMechanicInputs = [...document.querySelectorAll('.custom-mechanic-chip input')];
+const customPickerProgressEl = document.getElementById('custom-picker-progress');
+const customProgressTitleEl = document.getElementById('custom-progress-title');
+const customProgressTextEl = document.getElementById('custom-progress-text');
+const customProgressBarEl = document.getElementById('custom-progress-bar');
 const debugGuideEl = document.getElementById('debug-guide');
 const debugGuideBackdropEl = debugGuideEl?.querySelector('.debug-guide-backdrop');
 const debugGuideSubtitleEl = document.getElementById('debug-guide-subtitle');
@@ -63,6 +76,23 @@ const debugGuideCloseBtn = document.getElementById('debug-guide-close');
 const FAIL_FLASH_MS = 1400;
 const MOBILE_LAYOUT_BREAKPOINT = 500;
 const DEBUG_GUIDE_OPEN_CLASS = 'debug-guide-open';
+const CUSTOM_PICKER_OPEN_CLASS = 'custom-picker-open';
+const CUSTOM_TYPE_LABELS = {
+  triangles: 'Triangles',
+  cellColors: 'Colored Regions',
+  stars: 'Stars',
+  eliminators: 'Eliminators',
+  polyominoes: 'Polyominoes',
+  regionSizes: 'Region Size Numbers',
+};
+const CUSTOM_SELECTABLE_TYPES = new Set([
+  'triangles',
+  'cellColors',
+  'stars',
+  'eliminators',
+  'polyominoes',
+  'regionSizes',
+]);
 // Keep the legacy key names so existing players retain their saved scope settings
 // after the project rename from "Insight" to "The Vision".
 const SCOPE_DOCK_KEY = 'insight.scopeDock';
@@ -82,6 +112,7 @@ let navPage = 0;
 let levels = [];
 let save = loadSave();
 let currentIndex = 0;
+let activeCustomPuzzle = null;
 let grid;
 let renderer;
 let scopeRenderer;
@@ -98,6 +129,10 @@ let scopeViewEnabled = localStorage.getItem(SCOPE_VIEW_ENABLED_KEY) !== 'off';
 let scopeViewBoxState = null;
 let scopeTargetViewBox = null;
 let scopeFollowFrame = 0;
+let customPuzzleCounter = 0;
+let customGeneratorWorker = null;
+let customGenerationPending = false;
+let customMechanicMode = 'any';
 const mobileScopeEnabled = window.matchMedia?.('(pointer: coarse)').matches ?? false;
 const touchLayoutCapable =
   (navigator.maxTouchPoints ?? 0) > 0 || 'ontouchstart' in window;
@@ -247,6 +282,7 @@ async function loadLevels() {
 }
 
 function isPuzzleCompleted(puzzle) {
+  if (!puzzle?.progressKey) return false;
   return save.completedPuzzles.includes(puzzle.progressKey);
 }
 
@@ -258,7 +294,16 @@ function requiredSolutionsFor(puzzle) {
 }
 
 function foundSolutionCountFor(puzzle) {
+  if (!puzzle?.progressKey) return 0;
   return getFoundSolutions(save, puzzle.progressKey).length;
+}
+
+function isCustomPuzzle(puzzle) {
+  return Boolean(puzzle?.isCustomPuzzle);
+}
+
+function getActivePuzzle() {
+  return activeCustomPuzzle || levels[currentIndex] || null;
 }
 
 function getDefaultStatusText(puzzle) {
@@ -282,6 +327,85 @@ function setSolutionButtonState({ hidden, disabled, text }) {
   if (hidden !== undefined) solutionBtn.hidden = hidden;
   if (disabled !== undefined) solutionBtn.disabled = disabled;
   if (text !== undefined) solutionBtn.textContent = text;
+}
+
+function showCustomPicker() {
+  if (!customPickerEl) return;
+  setCustomMechanicMode(customMechanicMode);
+  customPickerEl.hidden = false;
+  customPickerEl.setAttribute('aria-hidden', 'false');
+  document.body.classList.add(CUSTOM_PICKER_OPEN_CLASS);
+}
+
+function hideCustomPicker() {
+  if (!customPickerEl) return;
+  customPickerEl.hidden = true;
+  customPickerEl.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove(CUSTOM_PICKER_OPEN_CLASS);
+}
+
+function setCustomPickerProgress({ loading, title = 'Generating puzzle...', text = 'Preparing generator...', progress = 0 }) {
+  if (!customPickerOptionsEl || !customMechanicsFieldEl || !customPickerProgressEl || !customProgressTitleEl || !customProgressTextEl || !customProgressBarEl) return;
+  customPickerOptionsEl.hidden = loading;
+  customMechanicsFieldEl.hidden = loading || customMechanicMode !== 'custom';
+  customPickerProgressEl.hidden = !loading;
+  customProgressTitleEl.textContent = title;
+  customProgressTextEl.textContent = text;
+  customProgressBarEl.style.width = `${Math.max(0, Math.min(progress, 1)) * 100}%`;
+}
+
+function resetCustomPickerProgress() {
+  setCustomPickerProgress({
+    loading: false,
+    title: 'Generating puzzle...',
+    text: 'Preparing generator...',
+    progress: 0,
+  });
+}
+
+function selectedMechanicLabels(preferredTypes) {
+  return (preferredTypes || [])
+    .filter((type) => CUSTOM_SELECTABLE_TYPES.has(type))
+    .map((type) => CUSTOM_TYPE_LABELS[type] || type);
+}
+
+function describeCustomProgress(profile, preferredTypes, payload) {
+  const stageText = payload.stage === 'expanded' ? 'Trying a roomier board...' : 'Trying layouts...';
+  const attemptText = payload.attempt && payload.maxAttempts
+    ? `Attempt ${payload.attempt} of ${payload.maxAttempts}`
+    : 'Preparing generator...';
+  const profileLabel = profile.charAt(0).toUpperCase() + profile.slice(1);
+  const bandText = payload.band ? ` ${payload.band}` : '';
+  const labels = selectedMechanicLabels(preferredTypes);
+  const preferredText = labels.length ? ` • ${labels.join(' + ')}` : '';
+  return {
+    title: `Generating ${profileLabel} puzzle...`,
+    text: `${attemptText}${bandText ? ` • ${bandText}` : ''}${preferredText} • ${stageText}`,
+  };
+}
+
+function setCustomMechanicMode(mode) {
+  customMechanicMode = mode === 'custom' ? 'custom' : 'any';
+  for (const btn of customModeBtns) {
+    btn.classList.toggle('active', btn.dataset.customMode === customMechanicMode);
+  }
+  if (!customGenerationPending) {
+    customMechanicsFieldEl.hidden = customMechanicMode !== 'custom';
+    customMechanicsFieldEl.setAttribute('aria-hidden', String(customMechanicMode !== 'custom'));
+  }
+}
+
+function getSelectedCustomMechanics() {
+  if (customMechanicMode !== 'custom') return [];
+  return customMechanicInputs
+    .filter((input) => input.checked && CUSTOM_SELECTABLE_TYPES.has(input.value))
+    .map((input) => input.value);
+}
+
+function cleanupCustomGeneratorWorker() {
+  customGeneratorWorker?.terminate();
+  customGeneratorWorker = null;
+  customGenerationPending = false;
 }
 
 function clamp(value, min, max) {
@@ -637,7 +761,7 @@ function renderDebugGuide() {
 }
 
 function showDebugGuide() {
-  if (!debugMode || !levels[currentIndex] || !debugGuideEl) return;
+  if (!debugMode || !getActivePuzzle() || !debugGuideEl) return;
   renderDebugGuide();
   debugGuideVisible = true;
   debugGuideEl.hidden = false;
@@ -896,8 +1020,13 @@ function isLevelUnlocked(index) {
 }
 
 function loadLevel(index) {
+  activeCustomPuzzle = null;
   currentIndex = Math.max(0, Math.min(index, levels.length - 1));
   const puzzle = levels[currentIndex];
+  loadPuzzle(puzzle, { isCampaignLevel: true });
+}
+
+function loadPuzzle(puzzle, { isCampaignLevel = false } = {}) {
   if (!puzzle) {
     showEmptyLevelState();
     return;
@@ -928,15 +1057,19 @@ function loadLevel(index) {
   debugSolutionVisible = false;
   debugSolutionIndex = 0;
   hideDebugGuide();
-  puzzleTitle.textContent = `Level ${currentIndex + 1} of ${levels.length}${
-    debugMode ? ' (debug)' : ''
-  }`;
-  statusEl.textContent = getDefaultStatusText(puzzle);
+  puzzleTitle.textContent = isCustomPuzzle(puzzle)
+    ? `Custom Puzzle${puzzle.customProfile ? ` (${puzzle.customProfile}` : ''}${(puzzle.preferredTypes || []).length ? `, ${selectedMechanicLabels(puzzle.preferredTypes).join(' + ')}` : ''}${puzzle.customProfile ? ')' : ''}${debugMode ? ' (debug)' : ''}`
+    : `Level ${currentIndex + 1} of ${levels.length}${debugMode ? ' (debug)' : ''}`;
+  statusEl.textContent = isCustomPuzzle(puzzle) ? 'Generated custom puzzle.' : getDefaultStatusText(puzzle);
   setGuideButtonState({ hidden: !debugMode, disabled: false, text: 'Guide' });
   setSolutionButtonState({ hidden: !debugMode, disabled: false, text: 'Show Sol.' });
-  nextBtn.disabled = !alreadySolved || currentIndex >= levels.length - 1;
+  nextBtn.disabled = isCustomPuzzle(puzzle) || !alreadySolved || currentIndex >= levels.length - 1;
+  customBtn.disabled = false;
+  customBtn.textContent = 'Custom';
 
-  setCurrentLevelIndex(save, currentIndex, COLLECTION_KEY);
+  if (isCampaignLevel) {
+    setCurrentLevelIndex(save, currentIndex, COLLECTION_KEY);
+  }
   renderPuzzleNav();
 }
 
@@ -949,7 +1082,10 @@ function handleRelease(puzzle, path) {
     syncMobileScope();
 
     const required = requiredSolutionsFor(puzzle);
-    if (required > 1 && !isPuzzleCompleted(puzzle)) {
+    if (isCustomPuzzle(puzzle)) {
+      statusEl.textContent = 'Solved custom puzzle!';
+      nextBtn.disabled = true;
+    } else if (required > 1 && !isPuzzleCompleted(puzzle)) {
       const { isNew } = addFoundSolution(save, puzzle.progressKey, path);
       const found = foundSolutionCountFor(puzzle);
       if (found >= required) {
@@ -1004,10 +1140,11 @@ function hideDebugSolution({ clearStatus = false } = {}) {
   renderer.drawPath([]);
   renderer.drawMirrorPath([]);
   syncMobileScope();
+  const puzzle = getActivePuzzle();
   if (clearStatus) {
     statusEl.textContent = '';
-  } else if (levels[currentIndex]) {
-    statusEl.textContent = getDefaultStatusText(levels[currentIndex]);
+  } else if (puzzle) {
+    statusEl.textContent = isCustomPuzzle(puzzle) ? 'Generated custom puzzle.' : getDefaultStatusText(puzzle);
   }
 }
 
@@ -1054,8 +1191,8 @@ function collectDebugSolutions(puzzle) {
 // is unchanged from before (one click shows, a second click hides), since wrapping after just 1
 // solution means the very next click already lands back on "hidden."
 function toggleDebugSolution() {
-  if (!debugMode || !levels[currentIndex] || !renderer || !input) return;
-  const puzzle = levels[currentIndex];
+  const puzzle = getActivePuzzle();
+  if (!debugMode || !puzzle || !renderer || !input) return;
   const cacheKey = puzzle.progressKey || puzzle.id;
 
   if (debugSolutionVisible) {
@@ -1104,6 +1241,76 @@ solutionBtn.addEventListener('click', () => {
 
 guideBtn.addEventListener('click', () => {
   toggleDebugGuide();
+});
+
+function generateChosenCustomPuzzle(profile, preferredTypes) {
+  const normalizedPreferredTypes = (preferredTypes || []).filter((type) => CUSTOM_SELECTABLE_TYPES.has(type));
+  cleanupCustomGeneratorWorker();
+  customGenerationPending = true;
+  customBtn.disabled = true;
+  customBtn.textContent = 'Generating...';
+  const labels = selectedMechanicLabels(normalizedPreferredTypes);
+  setCustomPickerProgress({
+    loading: true,
+    title: `Generating ${profile.charAt(0).toUpperCase() + profile.slice(1)} puzzle...`,
+    text: labels.length
+      ? `Preparing generator for ${labels.join(' + ')}...`
+      : 'Preparing generator...',
+    progress: 0.02,
+  });
+
+  const worker = new Worker(new URL('./custom-generator-worker.js', import.meta.url), { type: 'module' });
+  customGeneratorWorker = worker;
+  worker.addEventListener('message', (event) => {
+    const { type, payload, puzzle, message } = event.data || {};
+    if (type === 'progress' && payload) {
+      const copy = describeCustomProgress(profile, normalizedPreferredTypes, payload);
+      setCustomPickerProgress({
+        loading: true,
+        title: copy.title,
+        text: copy.text,
+        progress: payload.progress ?? 0,
+      });
+      return;
+    }
+
+    if (type === 'result' && puzzle) {
+      cleanupCustomGeneratorWorker();
+      customPuzzleCounter += 1;
+      activeCustomPuzzle = {
+        ...puzzle,
+        id: `custom_${customPuzzleCounter}`,
+      };
+      resetCustomPickerProgress();
+      hideCustomPicker();
+      loadPuzzle(activeCustomPuzzle, { isCampaignLevel: false });
+      return;
+    }
+
+    if (type === 'error') {
+      cleanupCustomGeneratorWorker();
+      resetCustomPickerProgress();
+      console.error('Failed to generate custom puzzle:', message);
+      statusEl.textContent = 'Could not generate a custom puzzle.';
+      customBtn.disabled = false;
+      customBtn.textContent = 'Custom';
+    }
+  });
+
+  worker.addEventListener('error', (event) => {
+    cleanupCustomGeneratorWorker();
+    resetCustomPickerProgress();
+    console.error('Custom generator worker failed:', event.message);
+    statusEl.textContent = 'Could not generate a custom puzzle.';
+    customBtn.disabled = false;
+    customBtn.textContent = 'Custom';
+  });
+
+  worker.postMessage({ type: 'generate', profile, preferredTypes: normalizedPreferredTypes });
+}
+
+customBtn.addEventListener('click', () => {
+  showCustomPicker();
 });
 
 nextBtn.addEventListener('click', () => {
@@ -1216,8 +1423,38 @@ debugGuideCloseBtn.addEventListener('click', () => {
   hideDebugGuide();
 });
 
+customPickerBackdropEl?.addEventListener('click', (evt) => {
+  evt.preventDefault();
+  evt.stopPropagation();
+  if (customGenerationPending) return;
+  hideCustomPicker();
+});
+
+customPickerCloseBtn?.addEventListener('click', () => {
+  if (customGenerationPending) return;
+  hideCustomPicker();
+});
+
+for (const btn of customOptionBtns) {
+  btn.addEventListener('click', () => {
+    generateChosenCustomPuzzle(btn.dataset.customProfile || 'medium', getSelectedCustomMechanics());
+  });
+}
+
+for (const btn of customModeBtns) {
+  btn.addEventListener('click', () => {
+    setCustomMechanicMode(btn.dataset.customMode || 'any');
+  });
+}
+
+setCustomMechanicMode('any');
+
 document.addEventListener('keydown', (evt) => {
   if (evt.key !== 'Escape') return;
+  if (customPickerEl && !customPickerEl.hidden && !customGenerationPending) {
+    hideCustomPicker();
+    return;
+  }
   if (debugGuideVisible) {
     hideDebugGuide();
     return;
@@ -1245,7 +1482,11 @@ window.addEventListener('pointercancel', (evt) => {
 // exercises the actual production handleRelease logic (win condition, save writes), not a
 // reimplementation of it.
 if (debugMode) {
-  window.__debugSubmitPath = (path) => handleRelease(levels[currentIndex], path);
+  window.__debugSubmitPath = (path) => {
+    const puzzle = getActivePuzzle();
+    if (!puzzle) return;
+    handleRelease(puzzle, path);
+  };
 }
 
 init();

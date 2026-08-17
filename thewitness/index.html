@@ -78,6 +78,7 @@
 
     <div class="controls">
       <button id="reset-btn" type="button">Reset</button>
+      <button id="custom-btn" type="button">Custom</button>
       <button id="guide-btn" type="button" hidden>Guide</button>
       <button id="solution-btn" type="button" hidden>Show Sol.</button>
       <button id="next-btn" type="button" disabled>Next Level</button>
@@ -103,6 +104,74 @@
         </div>
         <p id="debug-guide-subtitle" class="debug-guide-subtitle"></p>
         <div id="debug-guide-content" class="debug-guide-content"></div>
+      </div>
+    </section>
+
+    <section
+      id="custom-picker"
+      class="custom-picker"
+      hidden
+      aria-hidden="true"
+      aria-labelledby="custom-picker-title"
+    >
+      <div class="custom-picker-backdrop" aria-hidden="true"></div>
+      <div class="custom-picker-panel" role="dialog" aria-modal="true" aria-labelledby="custom-picker-title">
+        <div class="custom-picker-header">
+          <div>
+            <p class="custom-picker-kicker">Custom</p>
+            <h2 id="custom-picker-title">Generate Puzzle</h2>
+          </div>
+          <button id="custom-picker-close" class="custom-picker-close" type="button" aria-label="Close custom generator">
+            &times;
+          </button>
+        </div>
+        <p class="custom-picker-subtitle">Choose the kind of custom puzzle you want to generate.</p>
+        <div class="custom-picker-field">
+          <span>Mechanic Mode</span>
+          <div class="custom-mode-options" id="custom-mode-options">
+            <button type="button" class="custom-mode-btn active" data-custom-mode="any">Any</button>
+            <button type="button" class="custom-mode-btn" data-custom-mode="custom">Custom</button>
+          </div>
+        </div>
+        <div class="custom-picker-field" id="custom-mechanics-field" hidden>
+          <span>Mechanics</span>
+          <div class="custom-mechanics-grid">
+            <label class="custom-mechanic-chip"><input type="checkbox" value="triangles" /> <span>Triangles</span></label>
+            <label class="custom-mechanic-chip"><input type="checkbox" value="cellColors" /> <span>Colored Regions</span></label>
+            <label class="custom-mechanic-chip"><input type="checkbox" value="stars" /> <span>Stars</span></label>
+            <label class="custom-mechanic-chip"><input type="checkbox" value="eliminators" /> <span>Eliminators</span></label>
+            <label class="custom-mechanic-chip"><input type="checkbox" value="polyominoes" /> <span>Polyominoes</span></label>
+            <label class="custom-mechanic-chip"><input type="checkbox" value="regionSizes" /> <span>Region Size Numbers</span></label>
+          </div>
+        </div>
+        <div class="custom-picker-options">
+          <button class="custom-option-btn" type="button" data-custom-profile="easy">
+            <strong>Easy</strong>
+            <span>Smaller boards and lighter mechanic density.</span>
+          </button>
+          <button class="custom-option-btn" type="button" data-custom-profile="medium">
+            <strong>Medium</strong>
+            <span>A balanced mix of deduction and structure.</span>
+          </button>
+          <button class="custom-option-btn" type="button" data-custom-profile="hard">
+            <strong>Hard</strong>
+            <span>Denser combinations and tighter path pressure.</span>
+          </button>
+          <button class="custom-option-btn" type="button" data-custom-profile="expert">
+            <strong>Expert</strong>
+            <span>Late-game style boards with the heaviest reasoning load.</span>
+          </button>
+        </div>
+        <div id="custom-picker-progress" class="custom-picker-progress" hidden aria-live="polite">
+          <div class="custom-progress-copy">
+            <strong id="custom-progress-title">Generating puzzle...</strong>
+            <span id="custom-progress-text">Preparing generator...</span>
+          </div>
+          <div class="custom-progress-track" aria-hidden="true">
+            <div id="custom-progress-bar" class="custom-progress-bar"></div>
+          </div>
+          <p class="custom-progress-note">Some harder custom puzzles take longer to assemble.</p>
+        </div>
       </div>
     </section>
 
